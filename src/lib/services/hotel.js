@@ -44,7 +44,7 @@ export async function getHotelById(id) {
 export async function createHotel(payload) {
   const res = await api.post("/hotels", payload, {
     headers: {
-      "Content-Type" : "multipart/form-data",
+      "Content-Type": "multipart/form-data",
     },
   });
   return res.data?.data;
@@ -52,7 +52,12 @@ export async function createHotel(payload) {
 
 // Update hotel
 export async function updateHotel(id, payload) {
-  const res = await api.put(`/hotels/${id}`, payload);
+  // payload harus FormData (supaya bisa handle file upload + remove_images)
+  const res = await api.post(`/hotels/${id}`, payload, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return res.data.data;
 }
 

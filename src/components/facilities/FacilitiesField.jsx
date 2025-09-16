@@ -18,7 +18,7 @@ export default function FacilitiesField({ facilities, value = [], onChange }) {
     }
 
     const addCustomFacility = () => {
-        if (customFacility.trim() && !value.includes(customFacility)) {
+        if (customFacility.trim() && !value.includes(customFacility.trim())) {
             onChange([...value, customFacility.trim()])
             setCustomFacility("")
         }
@@ -26,6 +26,7 @@ export default function FacilitiesField({ facilities, value = [], onChange }) {
 
     return (
         <div className="space-y-2">
+            {/* Pilihan facilities bawaan */}
             <div className="flex flex-wrap gap-2">
                 {facilities.map((f) => {
                     const selected = value.includes(String(f.id))
@@ -43,7 +44,7 @@ export default function FacilitiesField({ facilities, value = [], onChange }) {
                 })}
             </div>
 
-            {/* Custom facility input */}
+            {/* Input custom facility */}
             <div className="flex gap-2 items-center">
                 <Input
                     placeholder="Add new facility"
@@ -61,17 +62,33 @@ export default function FacilitiesField({ facilities, value = [], onChange }) {
             </div>
 
             {/* Show selected facilities (existing + custom) */}
-            <div className="flex flex-wrap gap-2">
-                {value.map((f, idx) => (
-                    <Badge key={idx} variant="secondary">
-                        {f}
-                        <X
-                            className="ml-1 h-3 w-3 cursor-pointer"
-                            onClick={() => toggleFacility(f)}
-                        />
-                    </Badge>
-                ))}
+            <div className="flex flex-wrap gap-2 mt-2">
+                {value.map((f, idx) => {
+                    // cek apakah facility bawaan (id) atau custom string
+                    const found = facilities.find((fa) => String(fa.id) === String(f))
+                    const label = found ? found.name : f
+
+                    return (
+                        <Badge
+                            key={idx}
+                            variant="secondary"
+                            className="flex items-center gap-1 pr-1"
+                        >
+                            {label}
+                            <button
+                                type="button"
+                                onClick={() => onChange(value.filter((v) => v !== f))}
+                                className="ml-1 cursor-pointer"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+
+                    )
+                })}
             </div>
+
+
         </div>
     )
 }

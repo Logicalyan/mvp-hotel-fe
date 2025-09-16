@@ -35,15 +35,19 @@ export async function getHotels(page = 1, filters = {}, pageSize = 10) {
 }
 
 // Ambil hotel detail
-export async function getHotel(id) {
+export async function getHotelById(id) {
   const res = await api.get(`/hotels/${id}`);
   return res.data.data;
 }
 
 // Tambah hotel
 export async function createHotel(payload) {
-  const res = await api.post("/hotels", payload);
-  return res.data.data;
+  const res = await api.post("/hotels", payload, {
+    headers: {
+      "Content-Type" : "multipart/form-data",
+    },
+  });
+  return res.data?.data;
 }
 
 // Update hotel

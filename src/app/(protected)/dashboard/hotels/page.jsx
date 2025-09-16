@@ -5,6 +5,9 @@ import { columns } from "./columns"
 import { getHotels } from "@/lib/services/hotel"
 import { DataTable } from "@/components/common/data-table"
 import { HotelFilters } from "@/components/hotels/HotelFilters"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 export default function HotelsTable() {
   const [data, setData] = useState([])
@@ -114,8 +117,6 @@ export default function HotelsTable() {
     setData([])
   }, [])
 
-
-
   // Handler untuk menangkap perubahan dari TanStack Table
   const handlePaginationChange = useCallback((updater) => {
     setPagination(prev => {
@@ -136,31 +137,49 @@ export default function HotelsTable() {
   }, [fetchHotels])
 
   return (
-    <div className="space-y-6">
-      {/* Filter Section */}
-      <HotelFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-      />
+    <div className="flex flex-col gap-6 p-6">
+      {/* Header Section dengan layout yang lebih rapi */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Hotels</h2>
+          <p className="text-muted-foreground">Kelola properti hotel Anda</p>
+        </div>
+        <Link href="/dashboard/hotels/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Hotel
+          </Button>
+        </Link>
+      </div>
 
-      {/* Table Section */}
-      <div className="space-y-4 relative">
+      {/* Filter Section */}
+      <div className="rounded-lg border p-4">
+        <h3 className="text-lg font-medium mb-3">Filter & Pencarian</h3>
+        <HotelFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+        />
+      </div>
+
+      {/* Table Section dengan loading indicator yang lebih halus */}
+      <div className="rounded-lg border p-4 relative">
         <DataTable
           columns={columns}
           data={data}
           pageCount={pageMeta.last_page}
           state={{
             pagination,
-            filters // Pass filters ke DataTable untuk sync search
+            filters
           }}
           onPaginationChange={handlePaginationChange}
           onSearchChange={handleSearchChange}
           meta={{ refreshData }}
         />
         {loading && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg">
-            <div className="bg-white px-4 py-2 rounded-md shadow-lg">
-              <p className="text-sm">Loading...</p>
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
+            <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-md border shadow-sm">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-sm">Loading...</span>
             </div>
           </div>
         )}

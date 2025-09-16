@@ -14,9 +14,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/common/data-table/data-table-column-header"
 import { useState } from "react"
 import { deleteHotel } from "@/lib/services/hotel"
+import { useRouter } from "next/navigation"
 
 // Komponen terpisah untuk Actions Cell
 function ActionsCell({ hotel, table }) {
+  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
@@ -27,13 +29,6 @@ function ActionsCell({ hotel, table }) {
     setIsDeleting(true)
     try {
       await deleteHotel(hotel.id)
-      
-      // Show success message
-      // toast({
-      //   title: "Success",
-      //   description: `Hotel "${hotel.name}" has been deleted.`,
-      //   variant: "default"
-      // })
 
       // Trigger refresh data - call parent refresh function
       if (table.options.meta?.refreshData) {
@@ -42,11 +37,7 @@ function ActionsCell({ hotel, table }) {
 
     } catch (error) {
       console.error('Delete error:', error)
-      // toast({
-      //   title: "Error",
-      //   description: error.response?.data?.message || "Failed to delete hotel. Please try again.",
-      //   variant: "destructive"
-      // })
+
     } finally {
       setIsDeleting(false)
     }
@@ -68,7 +59,7 @@ function ActionsCell({ hotel, table }) {
           Copy Hotel ID
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>View details</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push(`/dashboard/hotels/${hotel.id}`)} >View details</DropdownMenuItem>
         <DropdownMenuItem>Edit hotel</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

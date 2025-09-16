@@ -240,7 +240,7 @@ export function HotelFilters({ filters, onFiltersChange }) {
             <Badge
               key={facility.id}
               variant={filters.facilities?.includes(facility.id) ? "default" : "outline"}
-              className="cursor-pointer hover:bg-gray-200"
+              className="cursor-pointer hover:bg-gray-600"
               onClick={() => handleFacilityToggle(facility.id)}
             >
               {facility.name}

@@ -13,13 +13,14 @@ export default function DashboardLayout({ children }) {
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            
-            <AppBreadcrumb/>
+
+            <AppBreadcrumb />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
-          {/* <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" /> */}
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-h-[100vh] rounded-xl md:min-h-min">
+          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min">
+            {children}
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

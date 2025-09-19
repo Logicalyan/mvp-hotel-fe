@@ -12,17 +12,30 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  ChevronRight,
+  PlayCircle,
 } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar"
 
@@ -52,22 +65,49 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Management",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Hotels",
+          url: "/dashboard/hotels",
         },
         {
-          title: "Starred",
+          icon: PlayCircle,
+          title: "Rooms",
           url: "#",
+          items: [
+            {
+              title: "Room Type",
+              url: "/rooms",
+            },
+            {
+              title: "Room Price",
+              url: "/room-prices",
+            },
+            {
+              title: "Room Facility",
+              url: "/room-facilities",
+            },
+            {
+              title: "Bed Type",
+              url: "/bed-types",
+            },
+            {
+              title: "Bookings",
+              url: "/bookings"
+            }
+          ]
+        },
+        {
+          title: "Hotel Facility",
+          url: "/hotel-facilities",
         },
         {
           title: "Settings",
-          url: "#",
+          url: "/settings",
         },
       ],
     },
@@ -78,15 +118,25 @@ const data = {
       items: [
         {
           title: "Genesis",
-          url: "#",
+          url: "/models/genesis",
+          items: [
+            {
+              title: "Training",
+              url: "/models/genesis/training"
+            },
+            {
+              title: "Deployment",
+              url: "/models/genesis/deployment"
+            }
+          ]
         },
         {
           title: "Explorer",
-          url: "#",
+          url: "/models/explorer",
         },
         {
           title: "Quantum",
-          url: "#",
+          url: "/models/quantum",
         },
       ],
     },
@@ -97,19 +147,19 @@ const data = {
       items: [
         {
           title: "Introduction",
-          url: "#",
+          url: "/docs/introduction",
         },
         {
           title: "Get Started",
-          url: "#",
+          url: "/docs/get-started",
         },
         {
           title: "Tutorials",
-          url: "#",
+          url: "/docs/tutorials",
         },
         {
           title: "Changelog",
-          url: "#",
+          url: "/docs/changelog",
         },
       ],
     },
@@ -120,19 +170,19 @@ const data = {
       items: [
         {
           title: "General",
-          url: "#",
+          url: "/settings/general",
         },
         {
           title: "Team",
-          url: "#",
+          url: "/settings/team",
         },
         {
           title: "Billing",
-          url: "#",
+          url: "/settings/billing",
         },
         {
           title: "Limits",
-          url: "#",
+          url: "/settings/limits",
         },
       ],
     },
@@ -154,6 +204,64 @@ const data = {
       icon: Map,
     },
   ],
+}
+
+// NavMain component dengan tree functionality
+function NavMain({ items }) {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <NavMenuItem key={item.title} item={item} />
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
+
+// Recursive NavMenuItem component - mirip dengan Tree component
+function NavMenuItem({ item }) {
+  const hasItems = item.items && item.items.length > 0
+
+  if (!hasItems) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={item.isActive}>
+          <a href={item.url}>
+            {item.icon && <item.icon />}
+            <span>{item.title}</span>
+          </a>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    )
+  }
+
+  return (
+    <SidebarMenuItem>
+      <Collapsible
+        className="group/collapsible [&[data-state=open]>button>svg:last-child]:rotate-90"
+        defaultOpen={item.isActive || item.title === "Hotels Management"}
+      >
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton>
+            {item.icon && <item.icon />}
+            <span>{item.title}</span>
+            <ChevronRight className="transition-transform" />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {item.items.map((subItem) => (
+              <NavMenuItem key={subItem.title} item={subItem} />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarMenuItem>
+  )
 }
 
 export function AppSidebar({

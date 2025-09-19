@@ -1,22 +1,19 @@
 "use client"
 
 import { columns } from "./columns"
-import { getHotels } from "@/lib/services/hotel"
+import { getUsers } from "@/lib/services/user"
 import { DataTable } from "@/components/common/data-table"
-import { HotelFilters } from "@/components/hotels/HotelFilters"
+import { UserFilters } from "@/components/users/UserFilters"
 import { useTableFilters } from "@/hooks/useTableFilters"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
-export default function HotelsTable() {
+export default function UsersTable() {
   const initialFilters = {
     search: "",
-    province_id: null,
-    city_id: null,
-    district_id: null,
-    sub_district_id: null,
-    facilities: [],
+    role: null,
+    status: null,
     sort: null
   }
 
@@ -24,7 +21,7 @@ export default function HotelsTable() {
     pageIndex: 0,
     pageSize: 10,
   }
-
+  
   const {
     data,
     loading,
@@ -37,13 +34,13 @@ export default function HotelsTable() {
     handlePaginationChange,
     refreshData,
     resetFilters,
-  } = useTableFilters(getHotels, initialFilters, initialPagination)
+  } = useTableFilters(getUsers, initialFilters, initialPagination)
 
   if (error) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <div className="text-center py-12">
-          <p className="text-red-500 mb-4">Error loading hotels: {error}</p>
+          <p className="text-red-500 mb-4">Error loading users: {error}</p>
           <Button onClick={() => window.location.reload()}>
             Retry
           </Button>
@@ -54,21 +51,19 @@ export default function HotelsTable() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Hotels</h2>
-          <p className="text-muted-foreground">Kelola properti hotel Anda</p>
+          <h2 className="text-2xl font-bold tracking-tight">Users</h2>
+          <p className="text-muted-foreground">Kelola data pengguna sistem</p>
         </div>
-        <Link href="/dashboard/hotels/create">
+        <Link href="/dashboard/users/create">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Tambah Hotel
+            Tambah User
           </Button>
         </Link>
       </div>
 
-      {/* Table Section dengan loading indicator */}
       <div className="relative">
         <DataTable
           columns={columns}
@@ -79,24 +74,24 @@ export default function HotelsTable() {
             filters
           }}
           onPaginationChange={handlePaginationChange}
-          onFiltersChange={handleFiltersReplace} // Gunakan handleFiltersReplace untuk filter component
+          onFiltersChange={handleFiltersReplace}
           meta={{ refreshData }}
           searchConfig={{
-            enabled: true, // Nonaktifkan search bar bawaan karena ada di HotelFilters
-            placeholder: "Cari hotel...",
+            enabled: true, // Nonaktifkan search bar bawaan karena ada di UserFilters
+            placeholder: "Cari user...",
             debounceMs: 500
           }}
           showColumnToggle={true}
-          emptyStateMessage="Tidak ada hotel yang ditemukan dengan filter saat ini."
+          emptyStateMessage="Tidak ada user yang ditemukan dengan filter saat ini."
           className="min-h-[400px]"
-          filterComponent={<HotelFilters />}
+          filterComponent={<UserFilters />}
         />
         
         {loading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
             <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-md border shadow-sm">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <span className="text-sm">Loading hotels...</span>
+              <span className="text-sm">Loading users...</span>
             </div>
           </div>
         )}

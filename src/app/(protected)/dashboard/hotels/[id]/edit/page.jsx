@@ -15,6 +15,7 @@ import FacilitiesField from "@/components/facilities/FacilitiesField"
 
 import { getHotelById, updateHotel } from "@/lib/services/hotel"
 import { getProvinces, getCities, getDistricts, getSubDistricts, getFacilities } from "@/lib/services/reference"
+import { Label } from "@/components/ui/label"
 
 const schema = z.object({
     name: z.string().min(1).max(50),
@@ -148,126 +149,199 @@ export default function UpdateHotelPage() {
     if (loading) return <p>Loading...</p>
 
     return (
-        <div className="max-w-3xl mx-auto p-6 space-y-6">
-            <h1 className="text-2xl font-semibold">Edit Hotel</h1>
+        <div className="container mx-auto p-6 max-w-4xl">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-4">
+                    <h1 className="text-2xl font-bold">Edit Hotel</h1>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <Input placeholder="Hotel Name" {...register("name")} />
-                {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+                    {/* Hotel Name */}
+                    <div>
+                        <Label>Hotel Name</Label>
+                        <Input
+                            placeholder="Hotel Name"
+                            {...register("name")}
+                        />
+                        {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+                    </div>
 
-                <Textarea placeholder="Description" {...register("description")} />
-                <Textarea placeholder="Address" {...register("address")} />
+                    {/* Description */}
+                    <div>
+                        <Label>Description</Label>
+                        <Textarea
+                            placeholder="Description"
+                            {...register("description")}
+                        />
+                        {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+                    </div>
 
-                <Input placeholder="Phone Number" {...register("phone_number")} />
-                <Input placeholder="Email" {...register("email")} />
+                    {/* Address */}
+                    <div>
+                        <Label>Address</Label>
+                        <Textarea
+                            placeholder="Address"
+                            {...register("address")}
+                        />
+                        {errors.address && <p className="text-sm text-red-500">{errors.address.message}</p>}
+                    </div>
 
-                {/* Dropdown lokasi */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <Controller
-                        control={control}
-                        name="province_id"
-                        render={({ field }) => (
-                            <Select
-                                onValueChange={(val) => field.onChange(Number(val))}
-                                value={field.value ? String(field.value) : ""}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Province" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {provinces.map((p) => (
-                                        <SelectItem key={p.id} value={String(p.id)}>
-                                            {p.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
-                    <Controller
-                        control={control}
-                        name="city_id"
-                        render={({ field }) => (
-                            <Select
-                                onValueChange={(val) => field.onChange(Number(val))}
-                                value={field.value ? String(field.value) : ""}
-                                disabled={!provinceId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select City" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {cities.map((c) => (
-                                        <SelectItem key={c.id} value={String(c.id)}>
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
-                    <Controller
-                        control={control}
-                        name="district_id"
-                        render={({ field }) => (
-                            <Select
-                                onValueChange={(val) => field.onChange(Number(val))}
-                                value={field.value ? String(field.value) : ""}
-                                disabled={!cityId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select District" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {districts.map((d) => (
-                                        <SelectItem key={d.id} value={String(d.id)}>
-                                            {d.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
-                    <Controller
-                        control={control}
-                        name="sub_district_id"
-                        render={({ field }) => (
-                            <Select
-                                onValueChange={(val) => field.onChange(Number(val))}
-                                value={field.value ? String(field.value) : ""}
-                                disabled={!districtId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Sub District" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {subDistricts.map((s) => (
-                                        <SelectItem key={s.id} value={String(s.id)}>
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
+                    {/* Phone Number */}
+                    <div>
+                        <Label>Phone Number</Label>
+                        <Input
+                            placeholder="Phone Number"
+                            {...register("phone_number")}
+                        />
+                        {errors.phone_number && <p className="text-sm text-red-500">{errors.phone_number.message}</p>}
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                        <Label>Email</Label>
+                        <Input
+                            placeholder="Email"
+                            {...register("email")}
+                        />
+                        {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                    </div>
+                </div>
+
+                {/* Location Information */}
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold">Location Information</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Province */}
+                        <div>
+                            <Label>Province</Label>
+                            <Controller
+                                control={control}
+                                name="province_id"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? String(field.value) : ""}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Province" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {provinces.map((p) => (
+                                                <SelectItem key={p.id} value={String(p.id)}>
+                                                    {p.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.province_id && <p className="text-sm text-red-500">{errors.province_id.message}</p>}
+                        </div>
+
+                        {/* City */}
+                        <div>
+                            <Label>City</Label>
+                            <Controller
+                                control={control}
+                                name="city_id"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? String(field.value) : ""}
+                                        disabled={!provinceId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select City" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {cities.map((c) => (
+                                                <SelectItem key={c.id} value={String(c.id)}>
+                                                    {c.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.city_id && <p className="text-sm text-red-500">{errors.city_id.message}</p>}
+                        </div>
+
+                        {/* District */}
+                        <div>
+                            <Label>District</Label>
+                            <Controller
+                                control={control}
+                                name="district_id"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? String(field.value) : ""}
+                                        disabled={!cityId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select District" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {districts.map((d) => (
+                                                <SelectItem key={d.id} value={String(d.id)}>
+                                                    {d.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.district_id && <p className="text-sm text-red-500">{errors.district_id.message}</p>}
+                        </div>
+
+                        {/* Sub District */}
+                        <div>
+                            <Label>Sub District</Label>
+                            <Controller
+                                control={control}
+                                name="sub_district_id"
+                                render={({ field }) => (
+                                    <Select
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? String(field.value) : ""}
+                                        disabled={!districtId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Sub District" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subDistricts.map((s) => (
+                                                <SelectItem key={s.id} value={String(s.id)}>
+                                                    {s.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.sub_district_id && <p className="text-sm text-red-500">{errors.sub_district_id.message}</p>}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Facilities */}
-                <Controller
-                    control={control}
-                    name="facilities"
-                    render={({ field }) => (
-                        <FacilitiesField
-                            facilities={facilities}
-                            value={field.value}
-                            onChange={field.onChange}
-                        />
-                    )}
-                />
+                <div className="space-y-2">
+                    <h2 className="text-xl font-semibold">Facilities</h2>
+                    <Controller
+                        control={control}
+                        name="facilities"
+                        render={({ field }) => (
+                            <FacilitiesField
+                                facilities={facilities}
+                                value={field.value}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
+                    {errors.facilities && <p className="text-sm text-red-500">{errors.facilities.message}</p>}
+                </div>
 
                 {/* Existing Images */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium">Existing Images</label>
+                    <h2 className="text-xl font-semibold">Existing Images</h2>
                     <div className="flex flex-wrap gap-3">
                         {existingImages.map((img) => (
                             <div key={img.id} className="relative">
@@ -292,14 +366,17 @@ export default function UpdateHotelPage() {
                 </div>
 
                 {/* New Images */}
-                <div>
-                    <label className="block text-sm font-medium">Add New Images</label>
+                <div className="space-y-2">
+                    <h2 className="text-xl font-semibold">Add New Images</h2>
                     <Input type="file" multiple accept="image/*" {...register("images")} />
+                    {errors.images && <p className="text-sm text-red-500">{errors.images.message}</p>}
                 </div>
 
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Updating..." : "Update"}
-                </Button>
+                <div className="flex justify-end">
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Updating..." : "Update"}
+                    </Button>
+                </div>
             </form>
         </div>
     )

@@ -32,3 +32,8 @@ export async function getFacilities() {
   const res = await api.get('/facilities');
   return res.data.data;
 }
+
+export async function getRoles() {
+  const res = await api.get('/roles');
+  return res.data.data;
+}

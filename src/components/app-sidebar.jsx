@@ -106,8 +106,8 @@ const data = {
           url: "/hotel-facilities",
         },
         {
-          title: "Settings",
-          url: "/settings",
+          title: "Users",
+          url: "/dashboard/users",
         },
       ],
     },

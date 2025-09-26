@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -13,37 +13,31 @@ import { Badge } from "@/components/ui/badge"
 import { Filter, RotateCcw } from "lucide-react"
 
 export function UserFilters({ filters, onFiltersChange }) {
-  const [localFilters, setLocalFilters] = useState(filters)
-
-  // Sinkronkan localFilters dengan filters dari props
-  useEffect(() => {
-    setLocalFilters(filters)
-  }, [filters])
-
-  // Handler untuk perubahan filter
-  const handleFilterChange = (key, value) => {
-    const newFilters = { ...localFilters, [key]: value }
-    setLocalFilters(newFilters)
+  
+  // ✅ Memoize handler untuk mencegah unnecessary re-renders
+  const handleFilterChange = useCallback((key, value) => {
+    const newFilters = { ...filters, [key]: value }
     onFiltersChange(newFilters)
-  }
+  }, [filters, onFiltersChange])
 
-  // Handler untuk reset semua filter
-  const clearAllFilters = () => {
+  // ✅ Memoize clear handler
+  const clearAllFilters = useCallback(() => {
     const clearedFilters = {
       search: "",
       role: null,
       status: null,
       sort: null
     }
-    setLocalFilters(clearedFilters)
     onFiltersChange(clearedFilters)
-  }
+  }, [onFiltersChange])
 
-  // Hitung jumlah filter aktif
-  const activeFiltersCount = Object.entries(localFilters).filter(([key, value]) => {
-    if (key === 'search') return value !== "" && value !== null
-    return value !== null && value !== undefined
-  }).length
+  // ✅ Memoize active filters count calculation
+  const activeFiltersCount = useMemo(() => {
+    return Object.entries(filters).filter(([key, value]) => {
+      if (key === 'search') return value !== "" && value !== null
+      return value !== null && value !== undefined
+    }).length
+  }, [filters])
 
   return (
     <div className="space-y-4 p-4 border rounded-lg">
@@ -71,7 +65,7 @@ export function UserFilters({ filters, onFiltersChange }) {
         <div className="space-y-2">
           <label className="text-sm font-medium">Role</label>
           <Select
-            value={localFilters.role || "all"}
+            value={filters.role || "all"}
             onValueChange={(value) => handleFilterChange("role", value === "all" ? null : value)}
           >
             <SelectTrigger>
@@ -90,7 +84,7 @@ export function UserFilters({ filters, onFiltersChange }) {
         {/* <div className="space-y-2">
           <label className="text-sm font-medium">Status Verifikasi</label>
           <Select
-            value={localFilters.status || "all"}
+            value={filters.status || "all"}
             onValueChange={(value) => handleFilterChange("status", value === "all" ? null : value)}
           >
             <SelectTrigger>
@@ -108,7 +102,7 @@ export function UserFilters({ filters, onFiltersChange }) {
         <div className="space-y-2">
           <label className="text-sm font-medium">Sort By</label>
           <Select
-            value={localFilters.sort || "default"}
+            value={filters.sort || "default"}
             onValueChange={(value) => handleFilterChange("sort", value === "default" ? null : value)}
           >
             <SelectTrigger className="w-full">

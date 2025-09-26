@@ -90,16 +90,8 @@ export default function HotelsTable() {
           emptyStateMessage="Tidak ada hotel yang ditemukan dengan filter saat ini."
           className="min-h-[400px]"
           filterComponent={<HotelFilters />}
+          isLoading={loading}
         />
-        
-        {loading && (
-          <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg">
-            <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-md border shadow-sm">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <span className="text-sm">Loading hotels...</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

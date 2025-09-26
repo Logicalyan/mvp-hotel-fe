@@ -28,13 +28,13 @@ import {
 import { DataTablePagination } from "./data-table/data-table-pagination"
 import { useDebounce } from "@/hooks/useDebounce"
 
-export function DataTable({ 
-    columns, 
-    data, 
-    pageCount, 
-    state, 
-    onPaginationChange, 
-    onFiltersChange, 
+export function DataTable({
+    columns,
+    data,
+    pageCount,
+    state,
+    onPaginationChange,
+    onFiltersChange,
     meta,
     searchConfig = {
         enabled: true,
@@ -45,14 +45,15 @@ export function DataTable({
     emptyStateMessage,
     className = "",
     tableConfig = {},
-    filterComponent // Prop untuk custom filter component
+    filterComponent,
+    isLoading = false
 }) {
     const [sorting, setSorting] = useState([])
     const [columnFilters, setColumnFilters] = useState([])
     const [columnVisibility, setColumnVisibility] = useState({})
     const [rowSelection, setRowSelection] = useState({})
     const [search, setSearch] = useState("")
-    
+
     // Debounce search input
     const debouncedSearch = useDebounce(search, searchConfig.debounceMs)
 
@@ -103,15 +104,15 @@ export function DataTable({
     // Auto-generate empty message based on data type
     const getEmptyMessage = () => {
         if (emptyStateMessage) return emptyStateMessage
-        
-        const hasFilters = state?.filters && Object.values(state.filters).some(value => 
+
+        const hasFilters = state?.filters && Object.values(state.filters).some(value =>
             value !== null && value !== undefined && value !== ""
         )
-        
+
         if (hasFilters) {
             return "No data found with current filters."
         }
-        
+
         return "No data available."
     }
 
@@ -168,8 +169,18 @@ export function DataTable({
             )}
 
             {/* Table */}
-            <div className="overflow-hidden rounded-md border">
-                <Table>
+            <div className="relative overflow-hidden rounded-md border">
+                {/* ✅ Loading overlay hanya untuk table area */}
+                {isLoading && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+                        <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-md border shadow-sm">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            <span className="text-sm">Loading...</span>
+                        </div>
+                    </div>
+                )}
+
+                <Table className={isLoading ? "opacity-50" : ""}>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>

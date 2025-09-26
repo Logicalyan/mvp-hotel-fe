@@ -20,28 +20,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Checkbox } from "@/components/ui/checkbox"
 import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
-import { deleteHotel } from "@/lib/services/hotel"
+import { deleteBedType } from "@/lib/services/bed-types"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useState } from "react"
 import { DataTableColumnHeader } from "@/components/common/data-table/data-table-column-header"
 
-// Hotel Actions component
-const HotelActions = ({ hotel, refreshData }) => {
+// Bed Type Actions component
+const BedTypeActions = ({ bedType, refreshData }) => {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true)
-      await deleteHotel(hotel.id)
-      toast.success("Hotel berhasil dihapus")
+      await deleteBedType(bedType.id)
+      toast.success("Bed type berhasil dihapus")
       refreshData()
     } catch (error) {
-      toast.error("Gagal menghapus hotel")
+      toast.error("Gagal menghapus bed type")
       console.error("Delete error:", error)
     } finally {
       setIsDeleting(false)
@@ -52,7 +51,11 @@ const HotelActions = ({ hotel, refreshData }) => {
     <AlertDialog>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0"
+            aria-label={`Open actions for ${bedType.name}`}
+          >
             <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -61,14 +64,14 @@ const HotelActions = ({ hotel, refreshData }) => {
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           
-          <Link href={`/dashboard/hotels/${hotel.id}`}>
+          <Link href={`/dashboard/bed-types/${bedType.id}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
           </Link>
           
-          <Link href={`/dashboard/hotels/${hotel.id}/edit`}>
+          <Link href={`/dashboard/bed-types/${bedType.id}/edit`}>
             <DropdownMenuItem className="cursor-pointer">
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -88,9 +91,9 @@ const HotelActions = ({ hotel, refreshData }) => {
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Hapus Hotel</AlertDialogTitle>
+          <AlertDialogTitle>Hapus Bed Type</AlertDialogTitle>
           <AlertDialogDescription>
-            Apakah Anda yakin ingin menghapus hotel <strong>{hotel.name}</strong>? 
+            Apakah Anda yakin ingin menghapus bed type <strong>{bedType.name}</strong>? 
             Tindakan ini tidak dapat dibatalkan.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -110,78 +113,33 @@ const HotelActions = ({ hotel, refreshData }) => {
 }
 
 export const columns = [
-  // {
-  //   id: "select",
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={
-  //         table.getIsAllPageRowsSelected() ||
-  //         (table.getIsSomePageRowsSelected() && "indeterminate")
-  //       }
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //     />
-  //   ),
-  //   enableSorting: false,
-  //   enableHiding: false,
-  // },
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Hotel" />
+      <DataTableColumnHeader column={column} title="Nama" />
     ),
     cell: ({ row }) => {
-      const hotel = row.original
+      const bedType = row.original
       return (
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <span className="font-medium">{hotel.name}</span>
-            <span className="text-sm text-muted-foreground">{hotel.email || '-'}</span>
-          </div>
+        <div className="flex flex-col">
+          <span className="font-medium truncate max-w-[200px]">{bedType.name}</span>
         </div>
       )
     },
   },
   {
-    accessorKey: "address",
+    accessorKey: "description",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Alamat" />
+      <DataTableColumnHeader column={column} title="Deskripsi" />
     ),
-  },
-  {
-    accessorKey: "sub_district.name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Kelurahan" />
-    ),
-    cell: ({ row }) => row.original.sub_district?.name || "-",
-  },
-  {
-    accessorKey: "district.name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Kecamatan" />
-    ),
-    cell: ({ row }) => row.original.district?.name || "-",
-  },
-  {
-    accessorKey: "city.name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Kota" />
-    ),
-    cell: ({ row }) => row.original.city?.name || "-",
-  },
-  {
-    accessorKey: "province.name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Provinsi" />
-    ),
-    cell: ({ row }) => row.original.province?.name || "-",
+    cell: ({ row }) => {
+      const description = row.getValue("description")
+      return (
+        <span className="text-sm text-muted-foreground truncate block max-w-[300px]">
+          {description || '-'}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "created_at",
@@ -194,6 +152,7 @@ export const columns = [
       
       try {
         const date = new Date(createdAt)
+        if (isNaN(date.getTime())) throw new Error("Invalid date")
         return (
           <div className="flex flex-col">
             <span className="text-sm">
@@ -209,13 +168,40 @@ export const columns = [
       }
     },
   },
+  // {
+  //   accessorKey: "updated_at",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Diperbarui" />
+  //   ),
+  //   cell: ({ row }) => {
+  //     const updatedAt = row.getValue("updated_at")
+  //     if (!updatedAt) return <span className="text-sm text-muted-foreground">-</span>
+      
+  //     try {
+  //       const date = new Date(updatedAt)
+  //       if (isNaN(date.getTime())) throw new Error("Invalid date")
+  //       return (
+  //         <div className="flex flex-col">
+  //           <span className="text-sm">
+  //             {format(date, "dd MMM yyyy", { locale: id })}
+  //           </span>
+  //           <span className="text-xs text-muted-foreground">
+  //             {format(date, "HH:mm", { locale: id })}
+  //           </span>
+  //         </div>
+  //       )
+  //     } catch (error) {
+  //       return <span className="text-sm text-muted-foreground">-</span>
+  //     }
+  //   },
+  // },
   {
     id: "actions",
     cell: ({ row, table }) => {
-      const hotel = row.original
+      const bedType = row.original
       const refreshData = table.options.meta?.refreshData
       
-      return <HotelActions hotel={hotel} refreshData={refreshData}/>
+      return <BedTypeActions bedType={bedType} refreshData={refreshData} />
     },
   },
 ]

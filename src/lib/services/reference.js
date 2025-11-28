@@ -36,4 +36,4 @@ export async function getFacilities() {
 export async function getRoles() {
   const res = await api.get('/roles');
   return res.data.data;
-}
+} 

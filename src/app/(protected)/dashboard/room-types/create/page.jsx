@@ -105,9 +105,18 @@ export default function CreateRoomTypePage() {
     })
 
     await createRoomType(formData)
+
+    toast.success("Room created successfully", {
+      description: "The new room type has been added to the list."
+    })
+
+    router.push("/dashboard/room-types")
     // success
   } catch (err) {
-    console.error("Failed to create room type:", err.response?.data)
+    console.error("Failed to create room type:", err)
+    toast.error("Failed to create room-type", {
+        description: err?.message || "An unexpected error occurred."
+      })
   }
 }
 

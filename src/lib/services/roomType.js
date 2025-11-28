@@ -35,10 +35,11 @@ export async function getRoomTypeById(id) {
 
 export async function createRoomType(payload) {
   const res = await api.post("/room-types", payload, {
-  headers: {
-    "Content-Type": "multipart/form-data",   // INI PENYEBAB UTAMA!!!
-  },})
-  return res.data
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data.data
 }
 
 

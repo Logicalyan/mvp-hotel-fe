@@ -1,3 +1,5 @@
+import api from "@/lib/api";
+
 export async function getRoomTypesByHotel(hotelId, page = 1, filters = {}, pageSize = 10) {
     const params = new URLSearchParams({
         page,

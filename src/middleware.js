@@ -12,7 +12,8 @@ export function middleware(request) {
     console.log('🛡️ Middleware Check:', {
       path: pathname,
       hasToken: !!token,
-      role: role || 'none',
+      role: role,
+      roleType: typeof role, 
       hotelId: hotelId || 'none',
     });
   }

@@ -15,22 +15,22 @@ import { getHotelById } from "@/lib/services/hotel"
 
 export default function HotelRoomTypesTable() {
     const params = useParams()
-    const urlHotelId = params.id
-    const { hotelId: authHotelId, loading: authLoading } = useHotelId()
+    const urlHotelId = parseInt(params.id)
+
+    const { hotelId: authHotelId, loading: authLoading, role } = useHotelId()
 
     const [hotel, setHotel] = useState(null)
     const [hotelLoading, setHotelLoading] = useState(true)
-    const [accessDenied, setAccessDenied] = useState(false)
 
-    // ✅ VALIDASI: URL hotel_id harus sama dengan auth hotel_id
     useEffect(() => {
-        if (!authLoading && authHotelId) {
-            if (parseInt(urlHotelId) !== authHotelId) {
-                console.error('🚫 Access denied: URL hotel_id !== auth hotel_id')
-                setAccessDenied(true)
+        if (!authLoading && role === 'hotel') {
+            // Hotel staff cuma bisa akses hotel mereka sendiri
+            if (authHotelId && urlHotelId !== authHotelId) {
+                console.error('🚫 Access denied: trying to access different hotel')
+                window.location.href = '/unauthorized'
             }
         }
-    }, [urlHotelId, authHotelId, authLoading])
+    }, [authLoading, role, urlHotelId, authHotelId])
 
     const initialFilters = {
         search: "",
@@ -42,11 +42,18 @@ export default function HotelRoomTypesTable() {
         pageSize: 10,
     }
 
-    // ✅ USE authHotelId (bukan urlHotelId) untuk security
+    // ✅ Wrapper function dengan hotel_id yang sudah tervalidasi
     const getRoomTypesForHotel = useCallback((page, filters, pageSize) => {
-        if (!authHotelId) return Promise.resolve({ roomTypes: [], meta: {} })
-        return getRoomTypesByHotel(authHotelId, page, filters, pageSize)
-    }, [authHotelId])
+        // Untuk admin, pakai URL hotel_id
+        // Untuk hotel staff, pakai authHotelId (lebih secure)
+        const hotelIdToUse = role === 'admin' ? urlHotelId : authHotelId
+
+        if (!hotelIdToUse) {
+            return Promise.resolve({ roomTypes: [], meta: {} })
+        }
+
+        return getRoomTypesByHotel(hotelIdToUse, page, filters, pageSize)
+    }, [urlHotelId, authHotelId, role])
 
     const {
         data,
@@ -65,11 +72,12 @@ export default function HotelRoomTypesTable() {
     useEffect(() => {
         async function loadHotel() {
 
-            if (!authHotelId) return
+            const hotelIdToUse = role === 'admin' ? urlHotelId : authHotelId
+            if (!hotelIdToUse) return
 
             try {
                 setHotelLoading(true)
-                const hotelData = await getHotelById(authHotelId)
+                const hotelData = await getHotelById(hotelIdToUse)
                 setHotel(hotelData)
             } catch (error) {
                 console.error("Failed to load hotel:", error)
@@ -78,7 +86,7 @@ export default function HotelRoomTypesTable() {
             }
         }
         loadHotel()
-    }, [authHotelId])
+    }, [urlHotelId, authHotelId, role])
 
     if (authLoading || hotelLoading) {
         return (
@@ -87,18 +95,6 @@ export default function HotelRoomTypesTable() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
                     <p className="mt-4">Loading...</p>
                 </div>
-            </div>
-        )
-    }
-
-    if (accessDenied) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen">
-                <h1 className="text-2xl font-bold text-red-500">Access Denied</h1>
-                <p className="text-gray-600 mt-2">You don't have permission to access this hotel.</p>
-                <Link href="/dashboard">
-                    <Button className="mt-4">Go to Dashboard</Button>
-                </Link>
             </div>
         )
     }
@@ -116,13 +112,15 @@ export default function HotelRoomTypesTable() {
         )
     }
 
+    const currentHotelId = role === 'admin' ? urlHotelId : authHotelId
+
     return (
         <div className="flex flex-col gap-6 p-6">
             {/* Back Button */}
-            <Link href="/hotel/dashboard">
+            <Link href={role === 'admin' ? '/admin/hotels' : '/dashboard'}>
                 <Button variant="ghost" size="sm">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Kembali ke Dashboard
+                    {role === 'admin' ? 'Kembali ke Hotels' : 'Kembali ke Dashboard'}
                 </Button>
             </Link>
 
@@ -130,13 +128,13 @@ export default function HotelRoomTypesTable() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">
-                        Room Types - {hotelLoading ? "Loading..." : hotel?.name}
+                        Room Types - {hotel?.name || 'Loading...'}
                     </h2>
                     <p className="text-muted-foreground">
                         Kelola tipe kamar untuk hotel ini
                     </p>
                 </div>
-                <Link href={`hotel/dashboard/hotels/${authHotelId}/room-types/create`}>
+                <Link href={`hotel/dashboard/hotels/${currentHotelId}/room-types/create`}>
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
                         Tambah Tipe Kamar

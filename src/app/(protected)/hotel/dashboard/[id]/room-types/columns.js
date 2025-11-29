@@ -29,17 +29,20 @@ import Link from "next/link"
 import { useState } from "react"
 import { DataTableColumnHeader } from "@/components/common/data-table/data-table-column-header"
 import { useParams } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 // RoomType Actions component
 const RoomTypeActions = ({ roomType, refreshData }) => {
   const [isDeleting, setIsDeleting] = useState(false)
-  const params = useParams()
-  const hotelId = params.id
+  const { hotelId, role } = useAuth()
+
+  // ✅ Untuk admin bisa akses semua, hotel staff cuma hotel mereka
+  const currentHotelId = role === 'admin' ? roomType.hotel_id : hotelId
 
   const handleDelete = async () => {
     try {
       setIsDeleting(true)
-      await deleteRoomTypeByHotel(hotelId, roomType.id)
+      await deleteRoomTypeByHotel(currentHotelId, roomType.id)
       toast.success("Tipe kamar berhasil dihapus")
       refreshData()
     } catch (error) {
@@ -62,13 +65,13 @@ const RoomTypeActions = ({ roomType, refreshData }) => {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <Link href={`hotel/dashboard/${hotelId}/room-types/${roomType.id}`}>
+          <Link href={`hotel/dashboard/${currentHotelId}/room-types/${roomType.id}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
           </Link>
-          <Link href={`hotel/dashboard/${hotelId}/room-types/${roomType.id}/edit`}>
+          <Link href={`hotel/dashboard/${currentHotelId}/room-types/${roomType.id}/edit`}>
             <DropdownMenuItem className="cursor-pointer">
               <Edit className="mr-2 h-4 w-4" />
               Edit

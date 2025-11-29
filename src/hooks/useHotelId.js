@@ -1,25 +1,21 @@
 // hooks/useHotelId.js
-import { getHotelId } from "@/lib/storage/authStorage"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useAuth } from "./useAuth"
 
 export function useHotelId() {
+    const { user, role, hotelId, loading } = useAuth();
     const router = useRouter()
-    const [hotelId, setHotelId] = useState(null)
-    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const id = getHotelId()
+        if (loading) return;
 
-        if (!id) {
-            console.error('❌ No hotel_id found in storage')
-            router.push('/unauthorized')
-            return
+        if (role === 'hotel' && !hotelId) {
+            console.error('❌ Hotel staff without hotel_id');
+            router.push('/unauthorized');
         }
 
-        setHotelId(id)
-        setLoading(false)
-    }, [router])
+    }, [loading, role, hotelId, router]);
 
-    return { hotelId, loading }
+    return { hotelId, loading, user, role };
 }

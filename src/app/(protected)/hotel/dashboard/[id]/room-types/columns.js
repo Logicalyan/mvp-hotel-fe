@@ -29,6 +29,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { DataTableColumnHeader } from "@/components/common/data-table/data-table-column-header"
 import { useParams } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 // RoomType Actions component
 const RoomTypeActions = ({ roomType, refreshData }) => {

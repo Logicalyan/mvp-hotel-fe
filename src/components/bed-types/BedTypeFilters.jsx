@@ -61,9 +61,9 @@ export function BedTypeFilters({ filters, onFiltersChange }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Search Filter */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Cari</label>
+                    <label className="text-sm font-medium">Fasilitas</label>
                     <Input
-                        placeholder="Cari bed type..."
+                        placeholder="Cari fasilitas bed type..."
                         value={filters.search || ""}
                         onChange={(e) => handleFilterChange("search", e.target.value)}
                     />

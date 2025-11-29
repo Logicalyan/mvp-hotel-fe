@@ -7,18 +7,23 @@ export const HOTEL_ID_KEY = "hotel_id";
 
 export function setAuth(token, role, hotelId = null) {
 
-    console.log('💾 setAuth INPUT:', { 
-        token: token ? `${token.substring(0, 20)}...` : null,
-        role, 
-        roleType: typeof role,
-        roleValue: JSON.stringify(role),
-        hotelId,
-        hotelIdType: typeof hotelId
-    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('💾 setAuth CALLED WITH:');
+    console.log('  - token:', token ? `${token.substring(0, 20)}...` : 'NULL/UNDEFINED');
+    console.log('  - role:', role);
+    console.log('  - role type:', typeof role);
+    console.log('  - role value:', JSON.stringify(role));
+    console.log('  - hotelId:', hotelId);
+    console.log('  - hotelId type:', typeof hotelId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // ✅ VALIDATION: Pastikan role adalah string dan tidak undefined
-    if (!role || role === 'undefined') {
+    if (!role || role === 'undefined' || role === 'null') {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.error('❌ Invalid role received:', role);
+        console.error('   Role type:', typeof role);
+        console.error('   This will prevent login from working!');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return;
     }
 
@@ -38,11 +43,12 @@ export function setAuth(token, role, hotelId = null) {
     
     // Set role (pastikan string)
     const roleString = String(role);
-    console.log('💾 Setting role cookie:', roleString);
+    console.log('✅ Setting role cookie:', roleString);
     setCookie(ROLE_KEY, roleString, cookieOptions);
 
     // ✅ STORE hotel_id untuk role hotel
     if (hotelId) {
+        console.log('✅ Setting hotel_id cookie:', hotelId);
         setCookie(HOTEL_ID_KEY, hotelId.toString(), cookieOptions);
     }
     
@@ -50,6 +56,10 @@ export function setAuth(token, role, hotelId = null) {
     if (!useSecureCookie) {
         console.log('🔓 Development mode: cookies set without secure flag');
     }
+
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ setAuth COMPLETED SUCCESSFULLY');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 
 export function clearAuth() {

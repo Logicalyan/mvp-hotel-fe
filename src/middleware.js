@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 export function middleware(request) {
   const token = request.cookies.get('token')?.value;
   const role = request.cookies.get('role')?.value;
+  const hotelId = request.cookies.get('hotel_id')?.value;
   const { pathname } = request.nextUrl;
 
   // 🔍 Debug logging (hapus di production)
@@ -12,6 +13,7 @@ export function middleware(request) {
       path: pathname,
       hasToken: !!token,
       role: role || 'none',
+      hotelId: hotelId || 'none',
     });
   }
   
@@ -27,7 +29,23 @@ export function middleware(request) {
 
   if (token && isPublicRoute) {
     console.log('✅ Has token, redirecting to dashboard');
-    return NextResponse.redirect(new URL(getDefaultRoute(role), request.url));
+    return NextResponse.redirect(new URL(getDefaultRoute(role, hotelId), request.url));
+  }
+
+  if (token && role === 'hotel') {
+
+    // Hotel staff harus punya hotel_id
+    if (!hotelId) {
+      console.log('🚫 Hotel staff without hotel_id');
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
+
+    // Hotel staff cuma bisa akses hotel mereka sendiri
+    const hotelIdFromPath = pathname.match(/\/dashboard\/hotels\/(\d+)/)?.[1];
+    if (hotelIdFromPath && hotelIdFromPath !== hotelId) {
+      console.log('🚫 Hotel staff accessing different hotel');
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
+    }
   }
 
   if (token && role) {
@@ -41,10 +59,10 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
-function getDefaultRoute(role) {
+function getDefaultRoute(role, hotelId) {
   const roleRoutes = {
     'admin': '/admin/dashboard',
-    'hotel': '/hotel',
+    'hotel': `/hotel/dashboard/${hotelId}`,
     'customer': '/dashboard',
   };
   return roleRoutes[role] || '/dashboard';

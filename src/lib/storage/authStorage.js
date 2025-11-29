@@ -3,8 +3,9 @@ import { deleteCookie, getCookie, setCookie } from "cookies-next";
 
 export const TOKEN_KEY = "token";
 export const ROLE_KEY = "role";
+export const HOTEL_ID_KEY = "hotel_id";
 
-export function setAuth(token, role) {
+export function setAuth(token, role, hotelId = null) {
     // Cek dari env variable atau fallback ke NODE_ENV
     const useSecureCookie = process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' 
         || process.env.NODE_ENV === 'production';
@@ -19,6 +20,11 @@ export function setAuth(token, role) {
     
     setCookie(TOKEN_KEY, token, cookieOptions);
     setCookie(ROLE_KEY, role, cookieOptions);
+
+    // ✅ STORE hotel_id untuk role hotel
+    if (hotelId) {
+        setCookie(HOTEL_ID_KEY, hotelId.toString(), cookieOptions);
+    }
     
     // Log untuk debugging (hapus di production)
     if (!useSecureCookie) {
@@ -29,6 +35,7 @@ export function setAuth(token, role) {
 export function clearAuth() {
     deleteCookie(TOKEN_KEY, { path: '/' });
     deleteCookie(ROLE_KEY, { path: '/' });
+    deleteCookie(HOTEL_ID_KEY, { path: '/' });
 }
 
 export function getToken() {
@@ -37,4 +44,9 @@ export function getToken() {
 
 export function getRole() {
     return getCookie(ROLE_KEY);
+}
+
+export function getHotelId() {
+    const hotelId = getCookie(HOTEL_ID_KEY);
+    return hotelId ? parseInt(hotelId) : null;
 }

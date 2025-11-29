@@ -54,10 +54,10 @@ export async function getCurrentUser() {
   const role = user.role;
   const hotelId = user.hotel_id;
 
-    console.log('👤 Current User:', user);
+  console.log('👤 Current User:', user);
   console.log('🎭 Current Role:', role);
   console.log('🏨 Current Hotel ID:', hotelId);
-  
+
   return {
     user: {
       ...user,

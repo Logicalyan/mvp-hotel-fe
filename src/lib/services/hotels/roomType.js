@@ -34,6 +34,11 @@ export async function getRoomTypeByHotel(hotelId, roomTypeId) {
     return res.data.data;
 }
 
+export async function getRoomTypeById(hotelId, roomTypeId) {
+    const res = await api.get(`/hotel/${hotelId}/room-types/${roomTypeId}`);
+    return res.data.data;
+}
+
 export async function createRoomTypeByHotel(hotelId, payload) {
     const res = await api.post(`/hotel/${hotelId}/room-types`, payload, {
         headers: {
@@ -44,8 +49,7 @@ export async function createRoomTypeByHotel(hotelId, payload) {
 }
 
 export async function updateRoomTypeByHotel(hotelId, roomTypeId, payload) {
-    // Laravel membutuhkan _method untuk multipart/form-data
-    // payload.append('_method', 'PUT');
+
 
     const res = await api.post(`/hotel/${hotelId}/room-types/${roomTypeId}`, payload, {
         headers: {

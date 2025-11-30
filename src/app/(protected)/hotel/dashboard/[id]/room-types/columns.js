@@ -1,4 +1,4 @@
-// apphotel/dashboard/[id]/room-types/columns.js
+// app/hotel/dashboard/[id]/room-types/columns.js
 "use client"
 import { Button } from "@/components/ui/button"
 import {

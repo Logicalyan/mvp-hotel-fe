@@ -11,10 +11,8 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { X, Filter, RotateCcw } from "lucide-react"
-import {
-  getHotels as getAllHotels,
-  getRoomTypeFacilities
-} from "@/lib/services/reference"  // Asumsi fungsi ini ada di reference untuk mendapatkan list simple hotels dan facilities khusus room types
+import { getHotels } from "@/lib/services/reference"
+import { getRoomTypeFacilities } from "@/lib/services/reference"
 
 export function RoomTypeFilters({ filters, onFiltersChange }) {
   const [hotels, setHotels] = useState([])
@@ -23,11 +21,15 @@ export function RoomTypeFilters({ filters, onFiltersChange }) {
 
   useEffect(() => {
     Promise.all([
-      getAllHotels(),
+      getHotels(),
       getRoomTypeFacilities()
     ]).then(([hotelsData, facilitiesData]) => {
-      setHotels(hotelsData)
+      // Extract hotels array from response
+      const hotels = hotelsData?.hotels || hotelsData || [];
+      setHotels(hotels)
       setFacilities(facilitiesData)
+    }).catch(error => {
+      console.error('Error loading filters:', error);
     })
   }, [])
 

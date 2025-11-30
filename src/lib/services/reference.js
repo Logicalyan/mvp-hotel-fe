@@ -46,12 +46,19 @@ export async function getHotels() {
   try {
     // Coba endpoint khusus dulu (lebih cepat & clean)
     const res = await api.get('/references/hotels');
-    return res.data.data;
+    // Handle both direct array dan nested data
+    return Array.isArray(res.data.data) ? res.data.data : res.data.data.data || [];
   } catch (error) {
     // Kalau endpoint belum ada, fallback ke /hotels dengan per_page besar
     console.warn('Endpoint /references/hotels belum ada, menggunakan fallback');
-    const res = await api.get('/hotels?per_page=500 ');
-    return res.data.data.data;
+    try {
+      const res = await api.get('/hotels?per_page=500');
+      // Handle pagination response: res.data.data.data = hotels array
+      return res.data?.data?.data || res.data?.data || [];
+    } catch (fallbackError) {
+      console.error('❌ Failed to fetch hotels:', fallbackError);
+      return [];
+    }
   }
 }
 

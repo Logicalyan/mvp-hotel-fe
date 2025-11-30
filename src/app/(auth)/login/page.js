@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input.jsx";
-import { Hotel, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,15 +49,25 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 p-12 flex-col justify-between relative overflow-hidden">
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+      <div className="hidden lg:flex lg:w-1/2 bg-gray-900 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="/image/bg.jpeg" 
+            alt="Hotel Background" 
+            fill
+            className="object-cover opacity-90"
+            priority
+          />
+        </div>
+        
+        {/* Subtle Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-950/60 via-transparent to-transparent z-0"></div>
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Hotel className="w-7 h-7 text-white" />
+            <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center p-2">
+              <Image src="/image/logo remove bg.png" alt="HotelLoop Logo" width={48} height={48} className="object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-white">HotelLoop</h1>
           </div>
@@ -92,8 +103,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Hotel className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-1.5">
+              <Image src="/image/logo remove bg.png" alt="HotelLoop Logo" width={36} height={36} className="object-contain" />
             </div>
             <h1 className="text-xl font-bold text-gray-900">HotelLoop</h1>
           </div>

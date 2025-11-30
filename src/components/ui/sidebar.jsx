@@ -53,6 +53,7 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const [isClient, setIsClient] = React.useState(false)
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -66,8 +67,10 @@ function SidebarProvider({
       _setOpen(openState)
     }
 
-    // This sets the cookie to keep the sidebar state.
-    document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+    // Only access cookies on client-side to prevent hydration mismatch
+    if (typeof window !== 'undefined') {
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+    }
   }, [setOpenProp, open])
 
   // Helper to toggle the sidebar.
@@ -571,9 +574,15 @@ function SidebarMenuSkeleton({
   showIcon = false,
   ...props
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
+  // Use deterministic widths instead of Math.random() to prevent hydration mismatch
+  const widths = ["50%", "60%", "70%", "80%", "65%", "75%"]
+  const [width, setWidth] = React.useState(widths[0])
+  const [isClient, setIsClient] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsClient(true)
+    // Only randomize on client-side after hydration
+    setWidth(widths[Math.floor(Math.random() * widths.length)])
   }, [])
 
   return (

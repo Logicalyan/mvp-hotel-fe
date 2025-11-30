@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Hotel, Facebook, Twitter, Linkedin, Instagram, Youtube } from "lucide-react";
+import Image from "next/image";
+import { Facebook, Twitter, Linkedin, Instagram, Youtube } from "lucide-react";
 
 export function DashboardFooter() {
     return (
@@ -9,10 +10,16 @@ export function DashboardFooter() {
                     {/* Company Info */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <Hotel className="w-6 h-6 text-white" />
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-1 flex-shrink-0">
+                                <Image 
+                                    src="/image/logo remove bg.png"
+                                    alt="hotellooop Logo"
+                                    width={44}
+                                    height={44}
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
-                            <span className="text-xl font-bold text-white">Homzen</span>
+                            <span className="text-xl font-bold text-white">hotellooop</span>
                         </div>
                         <p className="text-sm text-gray-400 mb-4">
                             Specializes in providing high-class tours for those in need. Contact Us

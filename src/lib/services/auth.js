@@ -4,6 +4,12 @@
   // Login
   export async function login(email, password) {
     try {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔐 LOGIN REQUEST:');
+      console.log('  - email:', email);
+      console.log('  - password:', password ? '***' : 'MISSING');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       const res = await api.post("/login", { email, password });
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -85,8 +91,23 @@
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('❌ LOGIN ERROR:');
       console.error('  Message:', error.message);
+      console.error('  Status:', error.response?.status);
+      console.error('  Status Text:', error.response?.statusText);
+      console.error('  Backend Error:', error.response?.data);
       console.error('  Full error:', error);
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Provide more helpful error messages
+      if (error.response?.status === 500) {
+        throw new Error(`Server error (500): ${error.response?.data?.message || 'Backend mengalami masalah. Silakan cek kredensial atau hubungi administrator.'}`);
+      } else if (error.response?.status === 401) {
+        throw new Error('Email atau password salah');
+      } else if (error.response?.status === 422) {
+        throw new Error('Data tidak valid. Periksa email dan password Anda.');
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      
       throw error;
     }
   }
@@ -132,38 +153,75 @@
   // Logout
   export async function logout() {
     try {
+      // Try to notify backend first (while token is still valid)
       await api.post("/logout");
+      console.log("✅ Logout API call successful");
     } catch (e) {
-      console.warn("Logout request failed:", e.message)
+      console.warn("⚠️ Logout API request failed:", e.message);
+      // Continue with local logout even if backend fails
     } finally {
-      clearAuth()
+      // Always clear auth, regardless of API response
+      clearAuth();
     }
   }
 
   // Get Current User
   export async function getCurrentUser() {
-    const token = getToken();
-    if (!token) return null;
-    const res = await api.get("/user");
-    console.log('🔍 /me Response:', res.data);
+    try {
+      const token = getToken();
+      if (!token) {
+        console.log('⚠️ No token found');
+        return null;
+      }
 
-    const user = res.data.data;
+      const res = await api.get("/user");
+      console.log('🔍 /me Response:', res.data);
 
-    // ✅ Ambil role dari user.role atau user.roles
-    const role = user.role;
-    const hotelId = user.hotel_id;
+      // Handle different response structures
+      const responseData = res.data.data || res.data;
+      
+      if (!responseData) {
+        console.warn('⚠️ No user data in response');
+        return null;
+      }
 
-    console.log('👤 Current User:', user);
-    console.log('🎭 Current Role:', role);
-    console.log('🏨 Current Hotel ID:', hotelId);
+      const user = responseData;
 
-    return {
-      user: {
-        ...user,
-        role: role,
-        hotel_id: hotelId
-      },
-      role: role
-    };
+      // ✅ Ambil role dengan fallback strategies
+      let role = null;
+      
+      // Strategy 1: user.role
+      if (user && user.role) {
+        role = user.role;
+        console.log('✅ Role found in user.role:', role);
+      }
+      // Strategy 2: user.roles (array)
+      else if (user && user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+        role = user.roles[0];
+        console.log('✅ Role found in user.roles[0]:', role);
+      }
+      else {
+        console.warn('⚠️ Role not found, defaulting to "user"');
+        role = 'user'; // Default role
+      }
+
+      const hotelId = user?.hotel_id || null;
+
+      console.log('👤 Current User:', user);
+      console.log('🎭 Current Role:', role);
+      console.log('🏨 Current Hotel ID:', hotelId);
+
+      return {
+        user: {
+          ...user,
+          role: role,
+          hotel_id: hotelId
+        },
+        role: role
+      };
+    } catch (error) {
+      console.error('❌ Error in getCurrentUser:', error);
+      return null;
+    }
   }
 

@@ -1,124 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PropertyCard } from "@/components/property-card.jsx";
 import { SearchSidebar } from "@/components/search-sidebar.jsx";
 import { LayoutGrid, List } from "lucide-react";
-
-// Sample property data
-const SAMPLE_PROPERTIES = [
-  {
-    id: 1,
-    name: "Casa Lomas De Mach Mach",
-    location: "21 Vegus Street, San Francisco, California",
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-    price: 1250,
-    bedrooms: 4,
-    bathrooms: 3,
-    sqft: 600,
-    badges: ["FOR SALE"],
-    isFeatured: true,
-    agent: { name: "Amanda Smith" },
-  },
-  {
-    id: 2,
-    name: "Villa Del Mar Retreat, Malibu",
-    location: "8502 Ocean Drive, Los Angeles, California",
-    image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800",
-    price: 950,
-    bedrooms: 5,
-    bathrooms: 4,
-    sqft: 800,
-    badges: ["FOR RENT"],
-    isFeatured: true,
-    agent: { name: "Sarah Wilson" },
-  },
-  {
-    id: 3,
-    name: "Rancho Vista Verde, Santa Barbara",
-    location: "37 Vegus Street, San Francisco, California",
-    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
-    price: 1650,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 600,
-    badges: ["FOR SALE"],
-    isFeatured: true,
-    agent: { name: "Ralph Edwards" },
-  },
-  {
-    id: 4,
-    name: "Sunset Heights Estate, Beverly Hills",
-    location: "1840 Ocean Santa Monica, California",
-    image: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800",
-    price: 950,
-    bedrooms: 4,
-    bathrooms: 3,
-    sqft: 600,
-    badges: ["FOR RENT"],
-    isFeatured: false,
-    agent: { name: "Jacob Jones" },
-  },
-  {
-    id: 5,
-    name: "Coastal Serenity Cottage",
-    location: "21 Vegus Street, Beverly Hills, California",
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800",
-    price: 1750,
-    bedrooms: 6,
-    bathrooms: 5,
-    sqft: 900,
-    badges: ["FOR SALE"],
-    isFeatured: true,
-    agent: { name: "Kathryn Martin" },
-  },
-  {
-    id: 6,
-    name: "Lakeview Haven, Lake Tahoe",
-    location: "37 Vegus Street, San Francisco, California",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800",
-    price: 850,
-    bedrooms: 3,
-    bathrooms: 2,
-    sqft: 600,
-    badges: ["FOR RENT"],
-    isFeatured: false,
-    agent: { name: "Lloyd Miles" },
-  },
-  {
-    id: 7,
-    name: "Sunset Heights Estate, Beverly Hills",
-    location: "1840 Ocean Santa Monica, California",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-    price: 930,
-    bedrooms: 4,
-    bathrooms: 3,
-    sqft: 600,
-    badges: ["FOR SALE"],
-    isFeatured: true,
-    agent: { name: "Jacob Jones" },
-  },
-  {
-    id: 8,
-    name: "Coastal Serenity Cottage",
-    location: "21 Vegus Drive, Beverly Hills, California",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-    price: 1290,
-    bedrooms: 5,
-    bathrooms: 4,
-    sqft: 800,
-    badges: ["FOR RENT"],
-    isFeatured: false,
-    agent: { name: "Kathryn Murphy" },
-  },
-];
+import { getHotels } from "@/lib/services/client/hotels";
 
 export default function DashboardPage() {
   const [viewMode, setViewMode] = useState("grid");
+  const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHotels, setTotalHotels] = useState(0);
+
+  // Fetch hotels on mount
+  useEffect(() => {
+    fetchHotels();
+  }, []);
+
+  // Fetch hotels from API
+  async function fetchHotels(searchFilters = {}, page = 1) {
+    try {
+      setLoading(true);
+      console.log('📍 Dashboard: Fetching hotels with filters:', searchFilters, 'Page:', page);
+      
+      const response = await getHotels(page, searchFilters, 10);
+      console.log('📍 Dashboard: Received response:', response);
+      
+      const hotelData = response.hotels || [];
+      const meta = response.meta || {};
+      
+      console.log('📍 Dashboard: Hotels data:', hotelData);
+      console.log('📍 Dashboard: Meta:', meta);
+      console.log('📍 Dashboard: Hotels count:', hotelData?.length || 0);
+      
+      if (!Array.isArray(hotelData)) {
+        console.warn('⚠️ Dashboard: Hotels is not an array, received:', typeof hotelData);
+        setHotels([]);
+        return;
+      }
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const storageUrl = apiUrl.replace('/api', '');
+
+      // Map hotels data to add required fields for PropertyCard
+      const mappedHotels = hotelData.map(hotel => ({
+        id: hotel.id,
+        name: hotel.name || 'Unnamed Hotel',
+        location: hotel.city?.name || hotel.address || 'Location not available',
+        image: hotel.images?.[0]?.image_url 
+          ? `${storageUrl}/storage/${hotel.images[0].image_url}`
+          : null,
+        price: hotel.min_price || hotel.price || 0,
+        bedrooms: hotel.total_rooms || 0,
+        bathrooms: hotel.total_rooms || 0,
+        sqft: 0,
+        badges: hotel.facilities?.map(f => f.name).slice(0, 3) || [],
+        agent: hotel.email || null,
+        isFeatured: false,
+        description: hotel.description,
+        phone: hotel.phone_number,
+        email: hotel.email,
+        province: hotel.province?.name,
+        city: hotel.city?.name,
+        district: hotel.district?.name,
+        subDistrict: hotel.sub_district?.name,
+        facilities: hotel.facilities,
+      }));
+      
+      setHotels(mappedHotels);
+      setCurrentPage(meta.current_page || 1);
+      setTotalPages(meta.last_page || 1);
+      setTotalHotels(meta.total || 0);
+      
+    } catch (error) {
+      console.error("❌ Dashboard: Failed to fetch hotels:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      setHotels([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleSearch = (filters) => {
     console.log("Search filters:", filters);
-    // TODO: Implement filtering logic
+    setFilters(filters);
+    fetchHotels(filters);
   };
 
   return (
@@ -126,7 +95,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           {/* Search Sidebar - Left */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
+          <div className="w-80 shrink-0">
             <SearchSidebar onSearch={handleSearch} />
           </div>
 
@@ -135,10 +104,10 @@ export default function DashboardPage() {
             {/* Toolbar with Sort and View Toggle */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">80 Per Page</span>
+                <span className="text-sm text-gray-600">10 Per Page</span>
                 <span className="text-gray-300">|</span>
                 <span className="text-sm text-gray-600">
-                  Showing {SAMPLE_PROPERTIES.length} results
+                  Showing {hotels.length} of {totalHotels} results (Page {currentPage}/{totalPages})
                 </span>
               </div>
 
@@ -175,33 +144,32 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Property Grid */}
-            <div className={`grid gap-6 ${
-              viewMode === "grid" 
-                ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
-                : "grid-cols-1"
-            }`}>
-              {SAMPLE_PROPERTIES.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="mt-8 flex justify-center">
-              <div className="flex items-center gap-2">
-                <button className="w-10 h-10 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium">
-                  1
-                </button>
-                <button className="w-10 h-10 bg-white text-gray-600 rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                  2
-                </button>
-                <button className="w-10 h-10 bg-white text-gray-600 rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                  3
-                </button>
-                <button className="w-10 h-10 bg-white text-gray-600 rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                  →
-                </button>
-              </div>
+            {/* Hotels Grid */}
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  : "space-y-4"
+              }
+            >
+              {loading ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="mt-4 text-gray-600">Loading hotels...</p>
+                </div>
+              ) : hotels.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-600">No hotels found</p>
+                </div>
+              ) : (
+                hotels.map((hotel) => (
+                  <PropertyCard
+                    key={hotel.id}
+                    property={hotel}
+                    viewMode={viewMode}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

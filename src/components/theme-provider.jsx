@@ -7,5 +7,27 @@ export function ThemeProvider({
     children,
     ...props
 }) {
-    return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return <>{children}</>
+    }
+
+    return (
+        <NextThemesProvider 
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            disableTransitionOnChange
+            forcedTheme="light"
+            storageKey="app-theme"
+            {...props}
+        >
+            {children}
+        </NextThemesProvider>
+    )
 }

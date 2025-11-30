@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bed, Bath, Maximize, MapPin, Heart } from "lucide-react";
 
-export function PropertyCard({ property }) {
+export function PropertyCard({ property, linkPath }) {
     const {
         id,
         name,
@@ -18,15 +18,22 @@ export function PropertyCard({ property }) {
         isFeatured = false,
     } = property;
 
+    // Default link path if not provided
+    const href = linkPath || `/dashboard/hotel/${id}`;
+
     return (
-        <Link href={`/dashboard/property/${id}`} className="block">
+        <Link href={href} className="block">
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow border border-gray-200 group cursor-pointer">
                 {/* Image Section */}
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-56 overflow-hidden bg-gray-200">
                     <img
                         src={image || "/placeholder-hotel.jpg"}
                         alt={name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                            console.warn(`Failed to load image: ${image}`);
+                            e.target.src = "/placeholder-hotel.jpg";
+                        }}
                     />
 
                     {/* Badges */}

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, role, hotel_id } = useAuth();
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({

@@ -14,6 +14,13 @@ import {
   SquareTerminal,
   ChevronRight,
   PlayCircle,
+  BedSingle,
+  School,
+  FolderKanban,
+  CircuitBoard,
+  UserRoundCog,
+  Building,
+  BedIcon
 } from "lucide-react"
 
 import { NavProjects } from "@/components/nav-projects"
@@ -48,9 +55,9 @@ const data = {
   },
   teams: [
     {
-      name: "Acme Inc",
+      name: "Hotel Loop",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: "Reservation Hotel",
     },
     {
       name: "Acme Corp.",
@@ -65,17 +72,43 @@ const data = {
   ],
   navMain: [
     {
+      title: "Dashboard",
+      icon: Command
+    },
+    {
       title: "Management",
       url: "#",
-      icon: SquareTerminal,
+      icon: FolderKanban,
       isActive: true,
       items: [
         {
+          icon: Building,
           title: "Hotels",
-          url: "/dashboard/hotels",
+          url: "#",
+          items: [
+            {
+              title: "Hotel Manage",
+              url: "/dashboard/hotels",
+            },
+            {
+              title: "Hotel Facilities",
+              url: "/dashboard/hotel-facilities",
+            },
+          ]
         },
         {
-          icon: PlayCircle,
+          icon: BedIcon,
+          title: "Beds",
+          url: "#",
+          items: [
+            {
+              title: "Bed Type",
+              url: "/dashboard/bed-types",
+            },
+          ]
+        },
+        {
+          icon: BedSingle,
           title: "Rooms",
           url: "#",
           items: [
@@ -92,100 +125,97 @@ const data = {
               url: "/room-facilities",
             },
             {
-              title: "Bed Type",
-              url: "/dashboard/bed-types",
-            },
-            {
               title: "Bookings",
               url: "/bookings"
             }
           ]
         },
         {
-          title: "Hotel Facility",
-          url: "/hotel-facilities",
-        },
-        {
+          icon: UserRoundCog,
           title: "Users",
           url: "/dashboard/users",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "/models/genesis",
-          items: [
-            {
-              title: "Training",
-              url: "/models/genesis/training"
-            },
-            {
-              title: "Deployment",
-              url: "/models/genesis/deployment"
-            }
-          ]
-        },
-        {
-          title: "Explorer",
-          url: "/models/explorer",
-        },
-        {
-          title: "Quantum",
-          url: "/models/quantum",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "/docs/introduction",
-        },
-        {
-          title: "Get Started",
-          url: "/docs/get-started",
-        },
-        {
-          title: "Tutorials",
-          url: "/docs/tutorials",
-        },
-        {
-          title: "Changelog",
-          url: "/docs/changelog",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "/settings/general",
-        },
-        {
-          title: "Team",
-          url: "/settings/team",
-        },
-        {
-          title: "Billing",
-          url: "/settings/billing",
-        },
-        {
-          title: "Limits",
-          url: "/settings/limits",
-        },
-      ],
-    },
+      title: "Reports",
+      icon: Command
+    }
+    // {
+    //   title: "Models",
+    //   url: "#",
+    //   icon: Bot,
+    //   items: [
+    //     {
+    //       title: "Genesis",
+    //       url: "/models/genesis",
+    //       items: [
+    //         {
+    //           title: "Training",
+    //           url: "/models/genesis/training"
+    //         },
+    //         {
+    //           title: "Deployment",
+    //           url: "/models/genesis/deployment"
+    //         }
+    //       ]
+    //     },
+    //     {
+    //       title: "Explorer",
+    //       url: "/models/explorer",
+    //     },
+    //     {
+    //       title: "Quantum",
+    //       url: "/models/quantum",
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Documentation",
+    //   url: "#",
+    //   icon: BookOpen,
+    //   items: [
+    //     {
+    //       title: "Introduction",
+    //       url: "/docs/introduction",
+    //     },
+    //     {
+    //       title: "Get Started",
+    //       url: "/docs/get-started",
+    //     },
+    //     {
+    //       title: "Tutorials",
+    //       url: "/docs/tutorials",
+    //     },
+    //     {
+    //       title: "Changelog",
+    //       url: "/docs/changelog",
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Settings",
+    //   url: "#",
+    //   icon: Settings2,
+    //   items: [
+    //     {
+    //       title: "General",
+    //       url: "/settings/general",
+    //     },
+    //     {
+    //       title: "Team",
+    //       url: "/settings/team",
+    //     },
+    //     {
+    //       title: "Billing",
+    //       url: "/settings/billing",
+    //     },
+    //     {
+    //       title: "Limits",
+    //       url: "/settings/limits",
+    //     },
+    //   ],
+    // },
   ],
   projects: [
     {
@@ -274,7 +304,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

@@ -117,10 +117,10 @@ export default function HotelRoomTypesTable() {
     return (
         <div className="flex flex-col gap-6 p-6">
             {/* Back Button */}
-            <Link href={role === 'admin' ? '/admin/hotels' : '/dashboard'}>
+            <Link href={role === 'hotel' ? `/hotel/dashboard/${currentHotelId}` : '/dashboard'}>
                 <Button variant="ghost" size="sm">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    {role === 'admin' ? 'Kembali ke Hotels' : 'Kembali ke Dashboard'}
+                    {role === 'hotel' ? 'Kembali ke Hotels' : 'Kembali ke Dashboard'}
                 </Button>
             </Link>
 

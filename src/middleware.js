@@ -7,56 +7,46 @@ export function middleware(request) {
   const hotelId = request.cookies.get('hotel_id')?.value;
   const { pathname } = request.nextUrl;
 
-  // 🔍 Debug logging (hapus di production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🛡️ Middleware Check:', {
-      path: pathname,
-      hasToken: !!token,
-      role: role,
-      roleType: typeof role, 
-      hotelId: hotelId || 'none',
-    });
-  }
-  
   const publicRoutes = ['/login', '/register', '/forgot-password'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
   if (!token && !isPublicRoute) {
-    console.log('❌ No token, redirecting to login');
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (token && isPublicRoute) {
-    console.log('✅ Has token, redirecting to dashboard');
     return NextResponse.redirect(new URL(getDefaultRoute(role, hotelId), request.url));
   }
 
-  if (token && role === 'hotel') {
+  // ❌ Customer tidak boleh mengunjungi dashboard mana pun
+  if (role === 'customer') {
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/hotel/dashboard')) {
+      console.log('🚫 Customer mencoba akses dashboard');
+      return NextResponse.redirect(new URL('/home', request.url));
+    }
+  }
 
-    // Hotel staff harus punya hotel_id
+  // Hotel staff rules
+  if (token && role === 'hotel') {
     if (!hotelId) {
-      console.log('🚫 Hotel staff without hotel_id');
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
 
-    // Hotel staff cuma bisa akses hotel mereka sendiri
     const hotelIdFromPath = pathname.match(/\/dashboard\/hotels\/(\d+)/)?.[1];
     if (hotelIdFromPath && hotelIdFromPath !== hotelId) {
-      console.log('🚫 Hotel staff accessing different hotel');
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
   }
 
+  // Admin area protection
   if (token && role) {
     if (pathname.startsWith('/admin') && role !== 'admin') {
-      console.log('🚫 Unauthorized access attempt to admin area');
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
   }
 
-  console.log('✅ Access granted');
   return NextResponse.next();
 }
 
@@ -66,9 +56,11 @@ function getDefaultRoute(role, hotelId) {
     'hotel': `/hotel/dashboard/${hotelId}`,
     'customer': '/home',
   };
-  return roleRoutes[role] || '/dashboard';
+  return roleRoutes[role];
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)',],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)',
+  ],
 };

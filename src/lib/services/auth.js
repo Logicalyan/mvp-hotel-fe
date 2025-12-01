@@ -17,7 +17,7 @@ export async function login(email, password) {
   return {
     user: {
       ...user,
-      role: role,
+      role: user.role,
       hotel_id: hotel_id
     },
     role: user.role

@@ -39,7 +39,6 @@ export async function getRoomTypeByHotel(hotelId, roomTypeId) {
     return res.data.data;
 }
 
-
 export async function createRoomTypeByHotel(hotelId, payload) {
     const res = await api.post(`/hotel/${hotelId}/room-types`, payload, {
         headers: {

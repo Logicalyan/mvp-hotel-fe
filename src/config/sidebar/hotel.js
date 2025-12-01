@@ -15,17 +15,17 @@ export default function hotelNav(hotelId) {
                     icon: Building,
                     title: "Hotel Info",
                     items: [
-                        { title: "Hotel Profile", url: `/hotel/${hotelId}/profile` },
-                        { title: "Hotel Facilities", url: `/hotel/${hotelId}/facilities` },
+                        { title: "Hotel Profile", url: `/hotel/dashboard/${hotelId}/profiles` },
+                        { title: "Hotel Facilities", url: `/hotel/dashboard/${hotelId}/facilities` },
                     ],
                 },
                 {
                     icon: BedSingle,
                     title: "Rooms",
                     items: [
-                        { title: "Room Type", url: `/hotel/${hotelId}/rooms/types` },
-                        { title: "Room Price", url: `/hotel/${hotelId}/rooms/prices` },
-                        { title: "Room Facility", url: `/hotel/${hotelId}/rooms/facilities` },
+                        { title: "Room Type", url: `/hotel/dashboard/${hotelId}/room-types` },
+                        { title: "Room Price", url: `/hotel/dashboard/${hotelId}/rooms/prices` },
+                        { title: "Room Facility", url: `/hotel/dashboard/${hotelId}/rooms/facilities` },
                     ],
                 },
                 { icon: BookOpen, title: "Reservations", url: `/hotel/${hotelId}/reservations` },

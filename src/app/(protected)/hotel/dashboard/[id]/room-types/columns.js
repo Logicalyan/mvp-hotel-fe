@@ -65,13 +65,13 @@ const RoomTypeActions = ({ roomType, refreshData }) => {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <Link href={`hotel/dashboard/${currentHotelId}/room-types/${roomType.id}`}>
+          <Link href={`/hotel/dashboard/${currentHotelId}/room-types/${roomType.id}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="mr-2 h-4 w-4" />
               Lihat Detail
             </DropdownMenuItem>
           </Link>
-          <Link href={`hotel/dashboard/${currentHotelId}/room-types/${roomType.id}/edit`}>
+          <Link href={`/hotel/dashboard/${currentHotelId}/room-types/${roomType.id}/edit`}>
             <DropdownMenuItem className="cursor-pointer">
               <Edit className="mr-2 h-4 w-4" />
               Edit

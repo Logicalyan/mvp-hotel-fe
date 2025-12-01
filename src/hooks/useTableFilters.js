@@ -82,6 +82,7 @@ export function useTableFilters(
         || res.rooms
         || res.reservations
         || res.reservationsByHotel
+        || res.facilitiesByHotel
         || res.data 
         || []
       const responseMeta = res.meta

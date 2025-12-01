@@ -64,7 +64,7 @@ function getDefaultRoute(role, hotelId) {
   const roleRoutes = {
     'admin': '/admin/dashboard',
     'hotel': `/hotel/dashboard/${hotelId}`,
-    'customer': '/dashboard',
+    'customer': '/home',
   };
   return roleRoutes[role] || '/dashboard';
 }

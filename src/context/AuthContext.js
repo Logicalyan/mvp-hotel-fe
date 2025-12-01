@@ -21,9 +21,11 @@ export function AuthProvider({ children }) {
         if (data && data.user) {
           console.log("LoadUser:", data);
 
-          setUser(data.user);
-          setRole(data.user.role);          // FIXED: role dari data.user.role
-          setHotelId(data.user.hotel_id);   // FIXED: hotel ID langsung dari user
+          const u = data.user;
+
+          setUser(u);
+          setRole(u.role);          // FIXED: role dari data.user.role
+          setHotelId(u.hotel_id);   // FIXED: hotel ID langsung dari user
         }
       } catch (error) {
         console.error("❌ Error loading user:", error);
@@ -32,7 +34,7 @@ export function AuthProvider({ children }) {
         setHotelId(null);
       } finally {
         setLoading(false);
-        setInitialized(true);               // FIXED
+        setInitialized(true);
       }
     }
 

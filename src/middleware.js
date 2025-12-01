@@ -2,65 +2,88 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const token = request.cookies.get('token')?.value;
-  const role = request.cookies.get('role')?.value;
-  const hotelId = request.cookies.get('hotel_id')?.value;
   const { pathname } = request.nextUrl;
+  const url = request.nextUrl.clone();
 
+  const token = request.cookies.get("token")?.value;
+  const role = request.cookies.get("role")?.value;
+  const hotelId = request.cookies.get("hotel_id")?.value;
+
+  // PUBLIC ROUTES →
   const publicRoutes = ['/login', '/register', '/forgot-password'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.includes(pathname);
 
-  if (!token && !isPublicRoute) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  // PROTECTED ROUTES →
+  const protectedRoutes = ['/dashboard', '/hotel', '/admin', '/home'];
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
+  // Already Authenticated → Block public pages
+  if (isPublicRoute && token) {
+    url.pathname = getDefaultRoute(role, hotelId);
+    return NextResponse.redirect(url);
   }
 
-  if (token && isPublicRoute) {
-    return NextResponse.redirect(new URL(getDefaultRoute(role, hotelId), request.url));
+  // Not Authenticated → Redirect to login
+  if (isProtectedRoute && !token) {
+    url.pathname = '/login';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
   }
 
-  // ❌ Customer tidak boleh mengunjungi dashboard mana pun
+  // ROLE-BASED PROTECTION →
   if (role === 'customer') {
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/hotel/dashboard')) {
-      console.log('🚫 Customer mencoba akses dashboard');
-      return NextResponse.redirect(new URL('/home', request.url));
+    if (pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/hotel') ||
+        pathname.startsWith('/admin')
+    ) {
+      url.pathname = '/home';
+      return NextResponse.redirect(url);
     }
   }
 
-  // Hotel staff rules
-  if (token && role === 'hotel') {
+  if (role === 'hotel') {
+    // hotel must have an ID
     if (!hotelId) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      url.pathname = '/home';
+      return NextResponse.redirect(url);
     }
 
-    const hotelIdFromPath = pathname.match(/\/dashboard\/hotels\/(\d+)/)?.[1];
-    if (hotelIdFromPath && hotelIdFromPath !== hotelId) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+    // Prevent accessing other hotel's dashboard
+    const hotelPathId = pathname.match(/\/hotel\/dashboard\/(\d+)/)?.[1];
+    if (hotelPathId && hotelPathId !== hotelId) {
+      url.pathname = '/home';
+      return NextResponse.redirect(url);
     }
   }
 
-  // Admin area protection
-  if (token && role) {
-    if (pathname.startsWith('/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
+  // ADMIN protection
+  if (pathname.startsWith('/admin') && role !== 'admin') {
+    url.pathname = '/home';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
+// Default route after login
 function getDefaultRoute(role, hotelId) {
-  const roleRoutes = {
-    'admin': '/admin/dashboard',
-    'hotel': `/hotel/dashboard/${hotelId}`,
-    'customer': '/home',
-  };
-  return roleRoutes[role];
+  return {
+    admin: '/admin/dashboard',
+    hotel: `/hotel/dashboard/${hotelId}`,
+    customer: '/home',
+  }[role] || '/login';
 }
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)',
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/home',
+    '/dashboard/:path*',
+    '/hotel/:path*',
+    '/admin/:path*',
   ],
 };

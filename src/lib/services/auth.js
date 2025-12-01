@@ -46,11 +46,18 @@ export async function getCurrentUser() {
   if (!token) return null;
 
   const res = await api.get("/user");
-  const user = res.data.data.user;
+  console.log('🔍 /user Response:', res.data);
+
+  const user = res.data.data; // ← cocok dengan backend terbaru
 
   return {
-    user,
+    user: {
+      ...user,
+      role: user.role,
+      hotel_id: user.hotel_id,
+    },
     role: user.role,
   };
 }
+
 

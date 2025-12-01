@@ -23,7 +23,6 @@ import {
   BedIcon
 } from "lucide-react"
 
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -45,6 +44,8 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/useAuth"
+import { getSidebar } from "@/config/sidebar"
 
 // This is sample data.
 const data = {
@@ -141,81 +142,6 @@ const data = {
       title: "Reports",
       icon: Command
     }
-    // {
-    //   title: "Models",
-    //   url: "#",
-    //   icon: Bot,
-    //   items: [
-    //     {
-    //       title: "Genesis",
-    //       url: "/models/genesis",
-    //       items: [
-    //         {
-    //           title: "Training",
-    //           url: "/models/genesis/training"
-    //         },
-    //         {
-    //           title: "Deployment",
-    //           url: "/models/genesis/deployment"
-    //         }
-    //       ]
-    //     },
-    //     {
-    //       title: "Explorer",
-    //       url: "/models/explorer",
-    //     },
-    //     {
-    //       title: "Quantum",
-    //       url: "/models/quantum",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "Documentation",
-    //   url: "#",
-    //   icon: BookOpen,
-    //   items: [
-    //     {
-    //       title: "Introduction",
-    //       url: "/docs/introduction",
-    //     },
-    //     {
-    //       title: "Get Started",
-    //       url: "/docs/get-started",
-    //     },
-    //     {
-    //       title: "Tutorials",
-    //       url: "/docs/tutorials",
-    //     },
-    //     {
-    //       title: "Changelog",
-    //       url: "/docs/changelog",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "Settings",
-    //   url: "#",
-    //   icon: Settings2,
-    //   items: [
-    //     {
-    //       title: "General",
-    //       url: "/settings/general",
-    //     },
-    //     {
-    //       title: "Team",
-    //       url: "/settings/team",
-    //     },
-    //     {
-    //       title: "Billing",
-    //       url: "/settings/billing",
-    //     },
-    //     {
-    //       title: "Limits",
-    //       url: "/settings/limits",
-    //     },
-    //   ],
-    // },
   ],
   projects: [
     {
@@ -240,7 +166,7 @@ const data = {
 function NavMain({ items }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Feature</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -294,16 +220,19 @@ function NavMenuItem({ item }) {
   )
 }
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar(props) {
+  const {role, hotelId} = useAuth();
+
+  const menu = getSidebar(role, hotelId);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+
+        <NavMain items={menu} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>

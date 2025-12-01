@@ -23,14 +23,13 @@ export function setAuth(token, role, hotelId = null) {
     }
 
     // Cek dari env variable atau fallback ke NODE_ENV
-    const useSecureCookie = process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' 
-        || process.env.NODE_ENV === 'production';
+    const useSecureCookie = false;
     
     const cookieOptions = {
         maxAge: 60 * 60 * 24 * 7, // 7 hari
         path: '/',
         secure: useSecureCookie, // false di development
-        sameSite: 'lax',
+        sameSite: useSecureCookie ? 'none' : 'lax',
         httpOnly: false,
     };
     

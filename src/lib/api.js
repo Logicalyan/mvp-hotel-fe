@@ -3,10 +3,12 @@ import { getToken } from "./storage/authStorage";
 
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: false,
+    withCredentials: true,
     headers: {
         Accept: "application/json",
-        Authorization: "Bearer"
+        "Content-Type": "application/json",
+        Authorization: "Bearer",
+        // 'Access-Control-Allow-Origin': '*'
     }
 })
 

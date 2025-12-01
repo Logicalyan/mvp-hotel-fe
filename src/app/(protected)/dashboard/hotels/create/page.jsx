@@ -26,6 +26,7 @@ const schema = z.object({
   address: z.string().min(1, "Address is required").max(255),
   phone_number: z.string().min(10).max(13),
   email: z.email(),
+  password: z.string().min(8, "Minimal 8 karakter"),
   province_id: z.number(),
   city_id: z.number(),
   district_id: z.number(),
@@ -50,6 +51,7 @@ export default function CreateHotelPage() {
       address: "",
       phone_number: "",
       email: "",
+      password: "",
       province_id: undefined,
       city_id: undefined,
       district_id: undefined,
@@ -165,6 +167,16 @@ export default function CreateHotelPage() {
                 {...register("email")}
               />
               {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <Label>Password</Label>
+              <Input
+                placeholder="Password"
+                {...register("password")}
+              />
+              {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
           </div>
 

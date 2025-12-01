@@ -1,4 +1,4 @@
-import { Command, FolderKanban, UserRoundCog } from "lucide-react";
+import { Command, FolderKanban, Hotel, UserRoundCog } from "lucide-react";
 
 export default [
   {
@@ -16,6 +16,7 @@ export default [
         url: "/dashboard/users",
       },
       {
+        icon: Hotel,
         title: "Hotels",
         url: "/dashboard/hotels",
       }

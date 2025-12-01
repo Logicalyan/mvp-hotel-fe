@@ -46,19 +46,11 @@ export async function getCurrentUser() {
   if (!token) return null;
 
   const res = await api.get("/user");
-  console.log('🔍 /user Response:', res.data);
-
-  const user = res.data.data;
-
-  const role = user.role;
-  const hotelId = user.hotel_id;
+  const user = res.data.data.user;
 
   return {
-    user: {
-      ...user,
-      role,
-      hotel_id: hotelId,
-    },
-    role,
+    user,
+    role: user.role,
   };
 }
+

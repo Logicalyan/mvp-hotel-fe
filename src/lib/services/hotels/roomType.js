@@ -29,15 +29,16 @@ export async function getRoomTypesByHotel(hotelId, page = 1, filters = {}, pageS
     };
 }
 
+export async function getRoomTypeById(hotelId, roomTypeId) {
+    const res = await api.get(`/hotel/${hotelId}/room-types/${roomTypeId}`);
+    return res.data.data;
+}
+
 export async function getRoomTypeByHotel(hotelId, roomTypeId) {
     const res = await api.get(`/hotel/${hotelId}/room-types/${roomTypeId}`);
     return res.data.data;
 }
 
-export async function getRoomTypeById(hotelId, roomTypeId) {
-    const res = await api.get(`/hotel/${hotelId}/room-types/${roomTypeId}`);
-    return res.data.data;
-}
 
 export async function createRoomTypeByHotel(hotelId, payload) {
     const res = await api.post(`/hotel/${hotelId}/room-types`, payload, {

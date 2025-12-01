@@ -5,6 +5,8 @@ const midtransClient = require('midtrans-client');
 export async function POST(request) {
   try {
     const body = await request.json();
+    console.log(body);
+    
     
     // Inisialisasi Snap
     const snap = new midtransClient.Snap({

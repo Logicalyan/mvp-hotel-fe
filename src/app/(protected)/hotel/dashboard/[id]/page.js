@@ -17,7 +17,9 @@ import {
   CalendarIcon, Hotel, BedDouble, Users, DollarSign,
   TrendingUp, TrendingDown, Activity, AlertCircle, RefreshCw,
   Inbox,
-  CalendarDays
+  CalendarDays,
+  LucideBookMarked,
+  BookOpen
 } from "lucide-react"
 import { format } from "date-fns"
 import { id as idLocale } from "date-fns/locale"
@@ -566,10 +568,10 @@ export default function HotelDashboardPage() {
                 Manage Room Types
               </Button>
             </Link>
-            <Link href={`/hotel/dashboard/${hotelId}/bookings`}>
+            <Link href={`/hotel/dashboard/${hotelId}/reservations`}>
               <Button className="w-full justify-start" variant="outline">
-                <Hotel className="mr-2 h-4 w-4" />
-                View Bookings
+                <BookOpen className="mr-2 h-4 w-4" />
+                Managed Reservations
               </Button>
             </Link>
             <Link href={`/hotel/dashboard/${hotelId}/rooms`}>

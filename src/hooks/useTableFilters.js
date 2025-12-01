@@ -80,6 +80,8 @@ export function useTableFilters(
         || res.roomTypes
         || res.roomTypesByHotel
         || res.rooms
+        || res.reservations
+        || res.reservationsByHotel
         || res.data 
         || []
       const responseMeta = res.meta

@@ -134,7 +134,7 @@ export default function HotelRoomTypesTable() {
                         Kelola tipe kamar untuk hotel ini
                     </p>
                 </div>
-                <Link href={`/hotel/dashboard/hotels/${currentHotelId}/room-types/create`}>
+                <Link href={`/hotel/dashboard/${currentHotelId}/room-types/create`}>
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
                         Tambah Tipe Kamar

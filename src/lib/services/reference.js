@@ -35,7 +35,7 @@ export async function getFacilities() {
 
 // Get roles (untuk user management)
 export async function getRoles() {
-  const res = await api.get('/roles');
+  const res = await api.get('/references/roles');
   return res.data.data;
 }
 

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 // Service untuk reference data
 import { getRoles } from "@/lib/services/reference"
 import { createUser } from "@/lib/services/user"
+import { toast } from "sonner"
 
 // --- Validasi Zod ---
 const schema = z.object({
@@ -46,8 +47,10 @@ export default function CreateUserPage() {
         try {
             await createUser(values)
             router.push("/dashboard/users")
+            toast.success("User Created Successfully")
         } catch (err) {
             console.error("❌ Failed to create user:", err)
+            toast.error("Failed Create User:", err)
         }
     }
 
@@ -102,7 +105,7 @@ export default function CreateUserPage() {
                                             <SelectValue placeholder="Pilih Role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {roles?.map((r) => (
+                                            {roles.map((r) => (
                                                 <SelectItem key={r.slug} value={r.slug}>{r.name}</SelectItem>
                                             ))}
                                         </SelectContent>

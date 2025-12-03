@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, role, hotel_id } = useAuth();
+  const { login } = useAuth();
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -30,7 +30,7 @@ export default function LoginPage() {
 
       // ✅ Redirect based on role (state sudah update!)
       if (role === 'admin') {
-        router.push('/admin/dashboard')
+        router.push('/dashboard')
       } else if (role === 'hotel') {
         router.push(`/hotel/dashboard/${user.hotel_id}`)
       } else {

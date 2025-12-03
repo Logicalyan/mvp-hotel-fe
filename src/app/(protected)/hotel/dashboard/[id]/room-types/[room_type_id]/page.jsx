@@ -1,9 +1,10 @@
 // app/hotel/dashboard/[id]/room-types/[room_type_id]/page.jsx
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getRoomTypeByHotel } from "@/lib/services/hotels/roomType";
+import { getRoomsByRoomType } from "@/lib/services/hotels/room";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,10 +12,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Edit, Trash2, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { deleteRoomTypeByHotel } from "@/lib/services/hotels/roomType";
 import { toast } from "sonner";
+import { DataTable } from "@/components/common/data-table";
+import { RoomByRoomTypeFilters } from "@/components/rooms/RoomByRoomTypeFilters";
+import { useTableFilters } from "@/hooks/useTableFilters";
+import { columns } from "./columns"; // Import columns dari file terpisah
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,6 +50,7 @@ export default function RoomTypeDetailByHotelPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [accessDenied, setAccessDenied] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
 
     // ✅ SECURITY: Validasi akses
     useEffect(() => {
@@ -73,6 +80,43 @@ export default function RoomTypeDetailByHotelPage() {
 
         fetchRoomType();
     }, [hotelId, roomTypeId, accessDenied]);
+
+    // ✅ Setup untuk Rooms Table
+    const initialFilters = {
+        search: "",
+        status: null,
+        floor: null,
+        is_active: null,
+        sort: null
+    };
+    const initialPagination = {
+        pageIndex: 0,
+        pageSize: 10,
+    };
+
+    const getRoomsForRoomType = useCallback((page, filters, pageSize) => {
+        const hotelIdToUse = role === 'admin' ? hotelId : authHotelId;
+
+        if (!hotelIdToUse || !roomTypeId) {
+            return Promise.resolve({ rooms: [], meta: {} });
+        }
+
+        return getRoomsByRoomType(hotelIdToUse, roomTypeId, page, filters, pageSize);
+    }, [hotelId, authHotelId, roomTypeId, role]);
+
+    const {
+        data: roomsData,
+        loading: roomsLoading,
+        error: roomsError,
+        pagination,
+        pageMeta,
+        filters,
+        handleFiltersChange,
+        handleFiltersReplace,
+        handlePaginationChange,
+        refreshData,
+        resetFilters,
+    } = useTableFilters(getRoomsForRoomType, initialFilters, initialPagination);
 
     const handleImageClick = (image) => {
         setSelectedImage(image);
@@ -143,9 +187,10 @@ export default function RoomTypeDetailByHotelPage() {
         ? roomType.images
         : roomType.images?.slice(0, 6);
     const remainingImages = roomType.images?.length - 6;
+    const currentHotelId = role === 'admin' ? hotelId : authHotelId;
 
     return (
-        <div className="container max-w-6xl mx-auto p-6 space-y-6">
+        <div className="container max-w-7xl mx-auto p-6 space-y-6">
             {/* Back Button */}
             <Link href={`/hotel/dashboard/${hotelId}/room-types`}>
                 <Button variant="ghost" size="sm">
@@ -169,7 +214,7 @@ export default function RoomTypeDetailByHotelPage() {
                             Edit
                         </Button>
                     </Link>
-                    <AlertDialog>
+                    {/* <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -195,203 +240,272 @@ export default function RoomTypeDetailByHotelPage() {
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog>
+                    </AlertDialog> */}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Images Gallery */}
-                    {roomType.images?.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Gallery</CardTitle>
-                                <CardDescription>
-                                    {roomType.images.length} photo{roomType.images.length !== 1 && 's'} available
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {displayedImages.map((img) => (
-                                        <div
-                                            key={img.id}
-                                            className="relative group cursor-pointer overflow-hidden rounded-lg"
-                                            onClick={() => handleImageClick(img)}
-                                        >
-                                            <img
-                                                src={`${process.env.NEXT_PUBLIC_URL}/storage/${img.image_url}`}
-                                                alt={roomType.name}
-                                                className="w-full h-32 object-cover transition-all duration-300 group-hover:scale-110"
-                                            />
-                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+            {/* Tabs Section */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-md">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="rooms">Rooms ({pageMeta?.total || 0})</TabsTrigger>
+                </TabsList>
+
+                {/* Overview Tab */}
+                <TabsContent value="overview" className="mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Main Content */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Images Gallery */}
+                            {roomType.images?.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Gallery</CardTitle>
+                                        <CardDescription>
+                                            {roomType.images.length} photo{roomType.images.length !== 1 && 's'} available
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            {displayedImages.map((img) => (
+                                                <div
+                                                    key={img.id}
+                                                    className="relative group cursor-pointer overflow-hidden rounded-lg"
+                                                    onClick={() => handleImageClick(img)}
+                                                >
+                                                    <img
+                                                        src={`${process.env.NEXT_PUBLIC_URL}/storage/${img.image_url}`}
+                                                        alt={roomType.name}
+                                                        className="w-full h-32 object-cover transition-all duration-300 group-hover:scale-110"
+                                                    />
+                                                    <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
 
-                                {roomType.images.length > 6 && (
-                                    <div className="mt-4 text-center">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setShowAllImages(!showAllImages)}
-                                        >
-                                            {showAllImages
-                                                ? 'Show Less'
-                                                : `Show ${remainingImages} More Photo${remainingImages !== 1 ? 's' : ''}`
-                                            }
-                                        </Button>
+                                        {roomType.images.length > 6 && (
+                                            <div className="mt-4 text-center">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setShowAllImages(!showAllImages)}
+                                                >
+                                                    {showAllImages
+                                                        ? 'Show Less'
+                                                        : `Show ${remainingImages} More Photo${remainingImages !== 1 ? 's' : ''}`
+                                                    }
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Description */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Description</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                        {roomType.description || "No description available."}
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            {/* Beds */}
+                            {roomType.beds?.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Bed Configuration</CardTitle>
+                                        <CardDescription>
+                                            {roomType.beds.length} bed type{roomType.beds.length !== 1 && 's'} available
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {roomType.beds.map((bed) => (
+                                                <div
+                                                    key={bed.id}
+                                                    className="flex justify-between items-center p-3 rounded-lg bg-muted/50"
+                                                >
+                                                    <div>
+                                                        <p className="font-medium">{bed.bed_type?.name || bed.bedType?.name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {bed.bed_type?.size || bed.bedType?.size}
+                                                        </p>
+                                                    </div>
+                                                    <Badge variant="secondary">
+                                                        × {bed.quantity}
+                                                    </Badge>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Prices */}
+                            {roomType.prices?.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Pricing</CardTitle>
+                                        <CardDescription>
+                                            {roomType.prices.length} price period{roomType.prices.length !== 1 && 's'}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Period</TableHead>
+                                                        <TableHead>Weekday</TableHead>
+                                                        <TableHead>Weekend</TableHead>
+                                                        <TableHead>Currency</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {roomType.prices.map((price) => (
+                                                        <TableRow key={price.id}>
+                                                            <TableCell>
+                                                                <div className="text-sm">
+                                                                    <div>{new Date(price.start_date).toLocaleDateString('id-ID')}</div>
+                                                                    <div className="text-muted-foreground">
+                                                                        to {new Date(price.end_date).toLocaleDateString('id-ID')}
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="font-medium">
+                                                                {Number(price.weekday_price).toLocaleString('id-ID')}
+                                                            </TableCell>
+                                                            <TableCell className="font-medium">
+                                                                {Number(price.weekend_price).toLocaleString('id-ID')}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline">{price.currency}</Badge>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        {/* Sidebar */}
+                        <div className="space-y-6">
+                            {/* Facilities */}
+                            {roomType.facilities?.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Facilities</CardTitle>
+                                        <CardDescription>
+                                            {roomType.facilities.length} facilit{roomType.facilities.length !== 1 ? 'ies' : 'y'} available
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex flex-wrap gap-2">
+                                            {roomType.facilities.map((f) => (
+                                                <Badge key={f.id} variant="secondary">
+                                                    {f.name}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Quick Stats */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Quick Stats</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Total Beds</span>
+                                        <span className="font-medium">
+                                            {roomType.beds?.reduce((sum, bed) => sum + bed.quantity, 0) || 0}
+                                        </span>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Max Capacity</span>
+                                        <span className="font-medium">{roomType.capacity} guests</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Photos</span>
+                                        <span className="font-medium">{roomType.images?.length || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Facilities</span>
+                                        <span className="font-medium">{roomType.facilities?.length || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-muted-foreground">Total Rooms</span>
+                                        <span className="font-medium">{pageMeta?.total || 0}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </TabsContent>
 
-                    {/* Description */}
+                {/* Rooms Tab */}
+                <TabsContent value="rooms" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Description</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Rooms Management</CardTitle>
+                                    <CardDescription>
+                                        Manage all rooms for this room type
+                                    </CardDescription>
+                                </div>
+                                <Link href={`/hotel/dashboard/${currentHotelId}/room-types/${roomTypeId}/create`}>
+                                    <Button>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Room
+                                    </Button>
+                                </Link>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                {roomType.description || "No description available."}
-                            </p>
+                            {roomsError ? (
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        Error loading rooms: {roomsError}
+                                    </AlertDescription>
+                                </Alert>
+                            ) : (
+                                <DataTable
+                                    columns={columns}
+                                    data={roomsData}
+                                    pageCount={pageMeta?.last_page || 0}
+                                    state={{
+                                        pagination,
+                                        filters
+                                    }}
+                                    onPaginationChange={handlePaginationChange}
+                                    onFiltersChange={handleFiltersReplace}
+                                    meta={{ refreshData }}
+                                    searchConfig={{
+                                        enabled: true,
+                                        placeholder: "Search room number...",
+                                        debounceMs: 500
+                                    }}
+                                    showColumnToggle={true}
+                                    emptyStateMessage="No rooms found with current filters."
+                                    className="min-h-[400px]"
+                                    filterComponent={<RoomByRoomTypeFilters />}
+                                    isLoading={roomsLoading}
+                                />
+                            )}
                         </CardContent>
                     </Card>
-
-                    {/* Beds */}
-                    {roomType.beds?.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Bed Configuration</CardTitle>
-                                <CardDescription>
-                                    {roomType.beds.length} bed type{roomType.beds.length !== 1 && 's'} available
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {roomType.beds.map((bed) => (
-                                        <div
-                                            key={bed.id}
-                                            className="flex justify-between items-center p-3 rounded-lg bg-muted/50"
-                                        >
-                                            <div>
-                                                <p className="font-medium">{bed.bed_type?.name || bed.bedType?.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {bed.bed_type?.size || bed.bedType?.size}
-                                                </p>
-                                            </div>
-                                            <Badge variant="secondary">
-                                                × {bed.quantity}
-                                            </Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Prices */}
-                    {roomType.prices?.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Pricing</CardTitle>
-                                <CardDescription>
-                                    {roomType.prices.length} price period{roomType.prices.length !== 1 && 's'}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Period</TableHead>
-                                                <TableHead>Weekday</TableHead>
-                                                <TableHead>Weekend</TableHead>
-                                                <TableHead>Currency</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {roomType.prices.map((price) => (
-                                                <TableRow key={price.id}>
-                                                    <TableCell>
-                                                        <div className="text-sm">
-                                                            <div>{new Date(price.start_date).toLocaleDateString('id-ID')}</div>
-                                                            <div className="text-muted-foreground">
-                                                                to {new Date(price.end_date).toLocaleDateString('id-ID')}
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="font-medium">
-                                                        {Number(price.weekday_price).toLocaleString('id-ID')}
-                                                    </TableCell>
-                                                    <TableCell className="font-medium">
-                                                        {Number(price.weekend_price).toLocaleString('id-ID')}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline">{price.currency}</Badge>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
-
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    {/* Facilities */}
-                    {roomType.facilities?.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Facilities</CardTitle>
-                                <CardDescription>
-                                    {roomType.facilities.length} facilit{roomType.facilities.length !== 1 ? 'ies' : 'y'} available
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-wrap gap-2">
-                                    {roomType.facilities.map((f) => (
-                                        <Badge key={f.id} variant="secondary">
-                                            {f.name}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Quick Stats */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Quick Stats</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Total Beds</span>
-                                <span className="font-medium">
-                                    {roomType.beds?.reduce((sum, bed) => sum + bed.quantity, 0) || 0}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Max Capacity</span>
-                                <span className="font-medium">{roomType.capacity} guests</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Photos</span>
-                                <span className="font-medium">{roomType.images?.length || 0}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Facilities</span>
-                                <span className="font-medium">{roomType.facilities?.length || 0}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                </TabsContent>
+            </Tabs>
 
             {/* Image Modal */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -425,7 +539,7 @@ export default function RoomTypeDetailByHotelPage() {
 // Skeleton Loading Component
 function RoomTypeDetailSkeleton() {
     return (
-        <div className="container max-w-6xl mx-auto p-6 space-y-6">
+        <div className="container max-w-7xl mx-auto p-6 space-y-6">
             <Skeleton className="h-9 w-40" />
 
             <div className="flex justify-between items-start">
@@ -438,6 +552,8 @@ function RoomTypeDetailSkeleton() {
                     <Skeleton className="h-9 w-24" />
                 </div>
             </div>
+
+            <Skeleton className="h-10 w-full max-w-md" />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
@@ -452,32 +568,6 @@ function RoomTypeDetailSkeleton() {
                                     <Skeleton key={i} className="h-32 w-full rounded-lg" />
                                 ))}
                             </div>
-                            <Skeleton className="h-9 w-40 mx-auto mt-4" />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-32" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-4 w-full mb-2" />
-                            <Skeleton className="h-4 w-full mb-2" />
-                            <Skeleton className="h-4 w-3/4" />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-40" />
-                            <Skeleton className="h-4 w-32" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                {[...Array(2)].map((_, i) => (
-                                    <Skeleton key={i} className="h-16 w-full" />
-                                ))}
-                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -485,24 +575,10 @@ function RoomTypeDetailSkeleton() {
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <Skeleton className="h-6 w-24" />
-                            <Skeleton className="h-4 w-36" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-wrap gap-2">
-                                {[...Array(6)].map((_, i) => (
-                                    <Skeleton key={i} className="h-6 w-20" />
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
                             <Skeleton className="h-6 w-32" />
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {[...Array(4)].map((_, i) => (
+                            {[...Array(5)].map((_, i) => (
                                 <Skeleton key={i} className="h-6 w-full" />
                             ))}
                         </CardContent>

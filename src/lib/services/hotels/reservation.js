@@ -53,6 +53,11 @@ export async function checkInReservation(reservationId) {
   return res.data.data
 }
 
+export async function checkOutReservation(reservationId) {
+  const res = await api.post(`reservations/${reservationId}/check-out`);
+  return res.data.data
+}
+
 /**
  * (Opsional) Export semua biar rapih
  */

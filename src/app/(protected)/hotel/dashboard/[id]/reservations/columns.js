@@ -27,7 +27,7 @@ import { DataTableColumnHeader } from "@/components/common/data-table/data-table
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import { useAuth } from "@/hooks/useAuth"
-import { checkInReservation } from "@/lib/services/hotels/reservation"
+import { checkInReservation, checkOutReservation } from "@/lib/services/hotels/reservation"
 
 // ====================
 // STATUS BADGE
@@ -200,7 +200,7 @@ const ReservationActions = ({ reservation, refreshData }) => {
                 )}
 
                 {/* Check In & Batalkan */}
-                {reservation.reservation_status === "booked" && (
+                {(reservation.reservation_status === "booked" && reservation.payment_status === "paid") && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
@@ -284,7 +284,7 @@ export const columns = [
             const checkIn = row.getValue("actual_check_in")
             if (!checkIn) return <span className="text-muted-foreground">-</span>
             try {
-                return format(new Date(checkIn), "dd MMM yyyy H.ii", { locale: id })
+                return format(new Date(checkIn), "dd MMM yyyy HH.ii", { locale: id })
             } catch {
                 return <span className="text-muted-foreground">-</span>
             }
@@ -310,7 +310,7 @@ export const columns = [
             const checkIn = row.getValue("actual_check_out")
             if (!checkIn) return <span className="text-muted-foreground">-</span>
             try {
-                return format(new Date(checkIn), "dd MMM yyyy H.ii", { locale: id })
+                return format(new Date(checkIn), "dd MMM yyyy HH.ii", { locale: id })
             } catch {
                 return <span className="text-muted-foreground">-</span>
             }

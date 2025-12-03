@@ -70,8 +70,8 @@ export async function getRoomsByRoomType(hotelId, roomTypeId, page = 1, filters 
 /**
  * Get single room by ID
  */
-export async function getRoomById(roomId) {
-    const res = await api.get(`/rooms/${roomId}`);
+export async function getRoomById(hotelId, roomTypeId, roomId) {
+    const res = await api.get(`/hotel/${hotelId}/room-type/${roomTypeId}/rooms/${roomId}`);
     return res.data.data;
 }
 

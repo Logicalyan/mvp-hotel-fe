@@ -305,7 +305,7 @@ export default function CreateRoomTypeByHotelPage() {
                                             <SelectContent>
                                                 {bedTypes?.map((bt) => (
                                                     <SelectItem key={bt.id} value={String(bt.id)}>
-                                                        {bt.name} ({bt.size})
+                                                        {bt.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

@@ -11,11 +11,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, User, Phone, Mail, Home, CreditCard, Clock, Printer, CheckCircle, XCircle, LogIn, LogOut } from "lucide-react";
+import {
+    ArrowLeft,
+    Calendar,
+    User,
+    Phone,
+    Mail,
+    Home,
+    CreditCard,
+    Clock,
+    Printer,
+    CheckCircle,
+    XCircle,
+    LogIn,
+    LogOut,
+    DollarSign,
+    CalendarDays,
+    Bed,
+    Hash
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { getReservationDetail } from "@/lib/services/hotels/reservation";
-// import { updateReservationStatus } from "@/lib/services/hotels/reservation";
+import { updateReservationStatus } from "@/lib/services/hotels/reservation";
 import { useAuth } from "@/hooks/useAuth";
 import { getHotelById } from "@/lib/services/hotel";
 
@@ -52,7 +70,6 @@ export default function ReservationDetailPage() {
         loadData();
     }, [hotelId, reservationId]);
 
-    // FUNGSI PEMBAYARAN — PAKAI API NEXT.JS (SUDAH JALAN!)
     const handlePayment = async () => {
         if (isPaying) return;
         setIsPaying(true);
@@ -76,7 +93,6 @@ export default function ReservationDetailPage() {
             toast.dismiss("midtrans");
             toast.loading("Membuka Midtrans...", { duration: 5000 });
 
-            // Tunggu snap siap (safety)
             if (!window.snap?.pay) {
                 await new Promise(resolve => {
                     const check = setInterval(() => {
@@ -91,7 +107,6 @@ export default function ReservationDetailPage() {
             window.snap.pay(data.token, {
                 onSuccess: () => {
                     toast.success("Pembayaran berhasil! Status otomatis update");
-                    // Refresh data
                     getReservationDetail(hotelId, reservationId).then(setReservation);
                     setIsPaying(false);
                 },
@@ -114,9 +129,13 @@ export default function ReservationDetailPage() {
 
     const handleStatusChange = async (newStatus) => {
         try {
-            await updateReservationStatus(hotelId, reservationId, newStatus);
-            setReservation(prev => ({ ...prev, reservation_status: newStatus }));
-            toast.success(`Status diubah menjadi ${getStatusLabel(newStatus)}`);
+            // await updateReservationStatus(hotelId, reservationId, newStatus);
+            // setReservation(prev => ({ ...prev, reservation_status: newStatus }));
+            // toast.success(`Status diubah menjadi ${getStatusLabel(newStatus)}`);
+
+            // // Refresh data untuk mendapatkan actual_check_in/actual_check_out terbaru
+            // const updatedData = await getReservationDetail(hotelId, reservationId);
+            // setReservation(updatedData);
         } catch (err) {
             toast.error("Gagal mengubah status");
         }
@@ -127,7 +146,7 @@ export default function ReservationDetailPage() {
             reservation: {
                 booked: ["bg-blue-100 text-blue-800", "Dipesan"],
                 checked_in: ["bg-green-100 text-green-800", "Check In"],
-                checked_out: ["bg-gray-100 text-gray-800", "Check Out"],
+                checked_out: ["bg-purple-100 text-purple-800", "Check Out"],
                 cancelled: ["bg-red-100 text-red-800", "Dibatalkan"],
             },
             payment: {
@@ -141,7 +160,12 @@ export default function ReservationDetailPage() {
     };
 
     const getStatusLabel = (status) => {
-        const map = { checked_in: "Check In", checked_out: "Check Out", cancelled: "Dibatalkan" };
+        const map = {
+            booked: "Dipesan",
+            checked_in: "Check In",
+            checked_out: "Check Out",
+            cancelled: "Dibatalkan"
+        };
         return map[status] || status;
     };
 
@@ -163,40 +187,42 @@ export default function ReservationDetailPage() {
     const currentHotelId = role === "admin" ? hotelId : authHotelId;
 
     return (
-        <div className="container mx-auto p-6 max-w-5xl space-y-6">
-            {/* Back Button */}
-            <Link href={`/hotel/dashboard/${currentHotelId}/reservations`}>
-                <Button variant="ghost" size="sm">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Kembali ke Daftar Reservasi
-                </Button>
-            </Link>
-
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Detail Reservasi</h1>
-                    <p className="text-muted-foreground">
-                        {hotel?.name} • Kode: <span className="font-mono font-bold text-lg">{reservation.reservation_code}</span>
-                    </p>
+        <div className="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Link href={`/hotel/dashboard/${currentHotelId}/reservations`}>
+                            <Button variant="ghost" size="sm" className="mb-4">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Kembali ke Daftar Reservasi
+                            </Button>
+                        </Link>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Detail Reservasi</h1>
+                        <p className="text-muted-foreground mt-1">
+                            {hotel?.name} • Kode: <span className="font-mono font-bold text-base md:text-lg">{reservation.reservation_code}</span>
+                        </p>
+                    </div>
+                    <Button onClick={() => window.print()} variant="outline" size="sm">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Cetak
+                    </Button>
                 </div>
-                <Button onClick={() => window.print()} variant="outline">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Cetak Invoice
-                </Button>
 
-                {/* TOMBOL BAYAR BESAR — KALAU BELUM DIBAYAR */}
+                {/* Payment Banner */}
                 {reservation.payment_status === "pending" && (
-                    <Card className="border-green-200 bg-green-50">
-                        <CardContent className="pt-6">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-xl font-semibold text-green-800">Pembayaran Belum Dilakukan</h3>
-                                    <p className="text-green-700">Total Tagihan: <strong>Rp {Number(reservation.total_price).toLocaleString("id-ID")}</strong></p>
+                    <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-sm">
+                        <CardContent className="p-4 md:p-6">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="text-center md:text-left">
+                                    <h3 className="text-lg md:text-xl font-semibold text-green-800">Pembayaran Belum Dilakukan</h3>
+                                    <p className="text-green-700 mt-1">
+                                        Total Tagihan: <strong>Rp {Number(reservation.total_price).toLocaleString("id-ID")}</strong>
+                                    </p>
                                 </div>
                                 <Button
                                     size="lg"
-                                    className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                                    className="bg-green-600 hover:bg-green-700 text-white font-bold px-6"
                                     onClick={handlePayment}
                                     disabled={isPaying}
                                 >
@@ -208,48 +234,48 @@ export default function ReservationDetailPage() {
                     </Card>
                 )}
 
-                {/* Kalau sudah lunas */}
                 {reservation.payment_status === "paid" && (
-                    <Card className="border-green-200 bg-green-50">
-                        <CardContent className="pt-6 text-center">
-                            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-3" />
-                            <h3 className="text-2xl font-bold text-green-800">Pembayaran Lunas</h3>
-                            <p className="text-green-700">Terima kasih telah melakukan pembayaran</p>
+                    <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-sm">
+                        <CardContent className="p-4 md:p-6">
+                            <div className="flex flex-col items-center text-center">
+                                <CheckCircle className="h-10 w-10 md:h-12 md:w-12 text-green-600 mb-3" />
+                                <h3 className="text-xl md:text-2xl font-bold text-green-800">Pembayaran Lunas</h3>
+                                <p className="text-green-700 mt-1">Terima kasih telah melakukan pembayaran</p>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
             </div>
 
-
-
+            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Info Tamu & Kamar */}
+                {/* Left Column - Guest & Room Info */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Info Tamu */}
+                    {/* Guest Information */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <User className="h-5 w-5" />
                                 Informasi Tamu
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
+                                <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Nama Lengkap</p>
-                                    <p className="font-medium">{reservation.guest_name}</p>
+                                    <p className="font-medium text-base">{reservation.guest_name}</p>
                                 </div>
-                                <div>
+                                <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Telepon</p>
-                                    <p className="font-medium flex items-center gap-2">
+                                    <p className="font-medium text-base flex items-center gap-2">
                                         <Phone className="h-4 w-4" />
                                         {reservation.guest_phone}
                                     </p>
                                 </div>
                                 {reservation.guest_email && (
-                                    <div>
+                                    <div className="space-y-1">
                                         <p className="text-sm text-muted-foreground">Email</p>
-                                        <p className="font-medium flex items-center gap-2">
+                                        <p className="font-medium text-base flex items-center gap-2">
                                             <Mail className="h-4 w-4" />
                                             {reservation.guest_email}
                                         </p>
@@ -259,187 +285,288 @@ export default function ReservationDetailPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Info Kamar & Tanggal */}
+                    {/* Room & Schedule Information */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <Home className="h-5 w-5" />
                                 Kamar & Jadwal
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Tipe Kamar</p>
-                                    <p className="font-semibold text-lg">{reservation.room?.room_type.name}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Nomor Kamar</p>
-                                    <p className="font-semibold text-lg">
-                                        Kamar {reservation.room?.number || reservation.room?.id}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Check In</p>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <Calendar className="h-4 w-4 text-blue-600" />
-                                            <span className="font-medium">
-                                                {format(new Date(reservation.check_in_date), "EEEE, dd MMMM yyyy", { locale: id })}
-                                            </span>
-                                        </div>
-                                        {reservation.planned_check_in && (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                                <Badge variant="secondary" className="text-xs">
-                                                    {(reservation.planned_check_in)}
-                                                </Badge>
-                                            </div>
-                                        )}
+                                    <div className="flex items-center gap-2">
+                                        <Bed className="h-4 w-4 text-muted-foreground" />
+                                        <p className="font-semibold text-lg">{reservation.room?.room_type?.name || "Tidak tersedia"}</p>
                                     </div>
                                 </div>
-
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Check Out</p>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <Calendar className="h-4 w-4 text-red-600" />
-                                            <span className="font-medium">
-                                                {format(new Date(reservation.check_out_date), "EEEE, dd MMMM yyyy", { locale: id })}
-                                            </span>
-                                        </div>
-                                        {reservation.planned_check_out && (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                                <Badge variant="outline" className="text-xs">
-                                                    {(reservation.planned_check_out)}
-                                                </Badge>
-                                            </div>
-                                        )}
+                                <div className="space-y-1">
+                                    <p className="text-sm text-muted-foreground">Nomor Kamar</p>
+                                    <div className="flex items-center gap-2">
+                                        <Hash className="h-4 w-4 text-muted-foreground" />
+                                        <p className="font-semibold text-lg">
+                                            Kamar {reservation.room?.number || reservation.room?.id || "Tidak tersedia"}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
                             <Separator />
 
-                            <div className="grid grid-cols-2 gap-8">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Durasi Menginap</p>
-                                    <p className="text-3xl font-bold text-blue-600">{reservation.nights} malam</p>
+                            {/* Check In Section */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium text-muted-foreground">Check In</p>
+                                        <Badge variant="outline" className="bg-blue-50">
+                                            Dijadwalkan
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                                        <Calendar className="h-5 w-5 text-blue-600" />
+                                        <div>
+                                            <p className="font-medium">
+                                                {format(new Date(reservation.check_in_date), "EEEE, dd MMMM yyyy", { locale: id })}
+                                            </p>
+                                            {reservation.planned_check_in && (
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    <Clock className="inline h-3 w-3 mr-1" />
+                                                    {(reservation.planned_check_in)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Actual Check In */}
+                                    {reservation.actual_check_in && (
+                                        <>
+                                            <div className="flex items-center justify-between mt-4">
+                                                <p className="text-sm font-medium text-muted-foreground">Check In Aktual</p>
+                                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                                    Terlaksana
+                                                </Badge>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                                                <LogIn className="h-5 w-5 text-green-600" />
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {format(new Date(reservation.actual_check_in), "EEEE, dd MMMM yyyy", { locale: id })}
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        <Clock className="inline h-3 w-3 mr-1" />
+                                                        {format(new Date(reservation.actual_check_in), "HH:mm", { locale: id })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                <div className="text-right">
+
+                                {/* Check Out Section */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium text-muted-foreground">Check Out</p>
+                                        <Badge variant="outline" className="bg-red-50">
+                                            Dijadwalkan
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                                        <Calendar className="h-5 w-5 text-red-600" />
+                                        <div>
+                                            <p className="font-medium">
+                                                {format(new Date(reservation.check_out_date), "EEEE, dd MMMM yyyy", { locale: id })}
+                                            </p>
+                                            {reservation.planned_check_out && (
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    <Clock className="inline h-3 w-3 mr-1" />
+                                                    {(reservation.planned_check_out)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Actual Check Out */}
+                                    {reservation.actual_check_out && (
+                                        <>
+                                            <div className="flex items-center justify-between mt-4">
+                                                <p className="text-sm font-medium text-muted-foreground">Check Out Aktual</p>
+                                                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                                    Terlaksana
+                                                </Badge>
+                                            </div>
+                                            <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                                                <LogOut className="h-5 w-5 text-purple-600" />
+                                                <div>
+                                                    <p className="font-medium">
+                                                        {format(new Date(reservation.actual_check_out), "EEEE, dd MMMM yyyy", { locale: id })}
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        <Clock className="inline h-3 w-3 mr-1" />
+                                                        {format(new Date(reservation.actual_check_out), "HH:mm", { locale: id })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            {/* Summary Section */}
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-1">
+                                    <p className="text-sm text-muted-foreground">Durasi Menginap</p>
+                                    <p className="text-2xl md:text-3xl font-bold text-blue-600">{reservation.nights} malam</p>
+                                </div>
+                                <div className="space-y-1 text-right">
                                     <p className="text-sm text-muted-foreground">Total Tagihan</p>
-                                    <p className="text-4xl font-bold text-green-600">
+                                    <p className="text-2xl md:text-3xl font-bold text-green-600">
                                         Rp {Number(reservation.total_price).toLocaleString("id-ID")}
                                     </p>
-                                    {reservation.payment_status === "paid" && (
-                                        <Badge className="mt-2" variant="default">Lunas</Badge>
-                                    )}
-                                    {reservation.payment_status === "pending" && (
-                                        <Badge className="mt-2" variant="secondary">Menunggu Pembayaran</Badge>
-                                    )}
+                                    <div className="mt-2">
+                                        {getStatusBadge(reservation.payment_status, "payment")}
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Breakdown Harga */}
+                    {/* Price Breakdown */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Breakdown Harga per Malam</CardTitle>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <DollarSign className="h-5 w-5" />
+                                Breakdown Harga per Malam
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {reservation.prices?.map((price, i) => (
-                                    <div key={i} className="flex justify-between items-center py-2 border-b last:border-0">
+                                    <div key={i} className="flex justify-between items-center py-3 border-b last:border-0">
                                         <div className="flex items-center gap-3">
-                                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                                            <span>{format(new Date(price.date), "dd MMM yyyy", { locale: id })}</span>
-                                            <span className="text-sm text-muted-foreground">
-                                                ({format(new Date(price.date), "EEEE", { locale: id })})
-                                            </span>
+                                            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                                            <div>
+                                                <span className="font-medium">
+                                                    {format(new Date(price.date), "dd MMM yyyy", { locale: id })}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground ml-2">
+                                                    ({format(new Date(price.date), "EEEE", { locale: id })})
+                                                </span>
+                                            </div>
                                         </div>
-                                        <span className="font-medium">
+                                        <span className="font-semibold">
                                             Rp {Number(price.price).toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 ))}
+                                {reservation.prices && reservation.prices.length > 0 && (
+                                    <div className="flex justify-between items-center py-3 font-bold text-lg">
+                                        <span>Total</span>
+                                        <span>Rp {Number(reservation.total_price).toLocaleString("id-ID")}</span>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Right Column - Status & Aksi */}
+                {/* Right Column - Status & Actions */}
                 <div className="space-y-6">
-                    {/* Status */}
+                    {/* Status Card */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-3">
                             <CardTitle>Status Reservasi</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm">Reservasi</span>
+                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Reservasi</span>
+                                </div>
                                 {getStatusBadge(reservation.reservation_status, "reservation")}
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm">Pembayaran</span>
+                            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Pembayaran</span>
+                                </div>
                                 {getStatusBadge(reservation.payment_status, "payment")}
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Timeline */}
+                    {/* Timeline Card */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-3">
                             <CardTitle>Timeline</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    {reservation.reservation_status !== "cancelled" ? (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
-                                    ) : (
-                                        <XCircle className="h-5 w-5 text-red-600" />
-                                    )}
-                                    <div>
+                                <div className="flex items-start gap-3">
+                                    <div className={`p-1 rounded-full ${reservation.reservation_status !== "cancelled" ? 'bg-green-100' : 'bg-red-100'}`}>
+                                        {reservation.reservation_status !== "cancelled" ? (
+                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                            <XCircle className="h-4 w-4 text-red-600" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
                                         <p className="font-medium">Reservasi Dibuat</p>
                                         <p className="text-sm text-muted-foreground">
-                                            {format(new Date(reservation.created_at), "dd MMM yyyy HH:mm", { locale: id })}
+                                            {format(new Date(reservation.created_at), "dd MMM yyyy • HH:mm", { locale: id })}
                                         </p>
                                     </div>
                                 </div>
-                                {reservation.reservation_status === "checked_in" && (
-                                    <div className="flex items-center gap-3">
-                                        <LogIn className="h-5 w-5 text-green-600" />
-                                        <div>Check In Manual</div>
+
+                                {reservation.actual_check_in && (
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-1 rounded-full bg-green-100">
+                                            <LogIn className="h-4 w-4 text-green-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">Check In Aktual</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {format(new Date(reservation.actual_check_in), "dd MMM yyyy • HH:mm", { locale: id })}
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
-                                {reservation.reservation_status === "checked_out" && (
-                                    <div className="flex items-center gap-3">
-                                        <LogOut className="h-5 w-5 text-blue-600" />
-                                        <div>Check Out Manual</div>
+
+                                {reservation.actual_check_out && (
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-1 rounded-full bg-purple-100">
+                                            <LogOut className="h-4 w-4 text-purple-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium">Check Out Aktual</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {format(new Date(reservation.actual_check_out), "dd MMM yyyy • HH:mm", { locale: id })}
+                                            </p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Aksi */}
+                    {/* Quick Actions Card */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-3">
                             <CardTitle>Aksi Cepat</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {reservation.reservation_status === "booked" && (
                                 <>
-                                    {/* <Button
+                                    <Button
                                         className="w-full"
                                         onClick={() => handleStatusChange("checked_in")}
                                     >
                                         <LogIn className="mr-2 h-4 w-4" />
                                         Check In Sekarang
-                                    </Button> */}
+                                    </Button>
                                     <Button
                                         variant="destructive"
                                         className="w-full"

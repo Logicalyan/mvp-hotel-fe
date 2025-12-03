@@ -24,11 +24,11 @@ export default function hotelNav(hotelId) {
                     title: "Rooms",
                     items: [
                         { title: "Room Type", url: `/hotel/dashboard/${hotelId}/room-types` },
-                        { title: "Room Price", url: `/hotel/dashboard/${hotelId}/rooms/prices` },
-                        { title: "Room Facility", url: `/hotel/dashboard/${hotelId}/rooms/facilities` },
+                        { title: "Bed Type", url: `/hotel/dashboard/${hotelId}/bed-types` },
+                        { title: "Room Facility", url: `/hotel/dashboard/${hotelId}/room-facilities` },
                     ],
                 },
-                { icon: BookOpen, title: "Reservations", url: `/hotel/${hotelId}/reservations` },
+                { icon: BookOpen, title: "Reservations", url: `/hotel/dashboard/${hotelId}/reservations` },
             ],
         },
     ];

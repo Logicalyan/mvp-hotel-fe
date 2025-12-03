@@ -70,7 +70,7 @@ export function middleware(request) {
 // Default route after login
 function getDefaultRoute(role, hotelId) {
   return {
-    admin: '/admin/dashboard',
+    admin: '/dashboard',
     hotel: `/hotel/dashboard/${hotelId}`,
     customer: '/home',
   }[role] || '/login';

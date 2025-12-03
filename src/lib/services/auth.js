@@ -42,15 +42,13 @@ export async function logout() {
 }
 
 export async function getCurrentUser() {
-  const token = getToken();
-  if (!token) return null;
-
-  const res = await api.get("/user");
-  const user = res.data.data.user;
-
-  return {
-    user,
-    role: user.role,
-  };
+  try {
+    const res = await api.get("/user");
+    
+    return res.data.data
+  } catch (error) {
+    return null
+  }
 }
+
 

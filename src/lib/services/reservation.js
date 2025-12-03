@@ -14,3 +14,16 @@ export const reservationService = {
     return response.data.data;
   },
 };
+export async function calculatePrice(roomId, checkIn, checkOut) {
+  const res = await api.post("/room-reservations/calculate-price", {
+    room_id: roomId,
+    check_in_date: checkIn,
+    check_out_date: checkOut,
+  });
+  return res.data.data;
+}
+
+export async function createReservation(payload) {
+  const res = await api.post("/room-reservations", payload);
+  return res.data.reservation || res.data.data;
+}

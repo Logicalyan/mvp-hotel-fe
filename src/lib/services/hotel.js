@@ -66,3 +66,15 @@ export async function deleteHotel(id) {
   const res = await api.delete(`/hotels/${id}`);
   return res.data.data;
 }
+
+// Ambil detail hotel + room types sekaligus
+export async function getHotelDetail(id) {
+  const res = await api.get(`/hotels/${id}`);
+  const hotel = res.data.data;
+
+  // Ambil room types langsung di sini biar 1 call aja (bisa diganti parallel kalau mau)
+  const roomRes = await api.get(`/hotel/${id}/room-types?per_page=50`);
+  hotel.room_types = roomRes.data.data.data;
+
+  return hotel;
+}

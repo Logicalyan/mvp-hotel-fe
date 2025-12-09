@@ -13,11 +13,17 @@ import { Label } from "@/components/ui/label"
 
 import { getUserById, updateUser } from "@/lib/services/user"
 import { getRoles } from "@/lib/services/reference"
+import { toast } from "sonner"
 
 const schema = z.object({
     name: z.string().min(1, "Name is required").max(50),
     email: z.email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters").max(50).optional(),
+    password: z
+        .string()
+        .min(8, "Password must be at least 8 characters")
+        .max(50)
+        .optional()
+        .or(z.literal("")),
     role: z.string().min(1, "Role is required"),
 })
 
@@ -75,6 +81,7 @@ export default function UpdateUserPage() {
 
             await updateUser(params.id, data)
             router.push("/dashboard/users")
+            toast.success("Updated Users Successfully")
         } catch (err) {
             console.error("❌ Failed to update user:", err)
         }

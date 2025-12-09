@@ -15,7 +15,7 @@ export const reservationService = {
   },
 };
 export async function calculatePrice(roomId, checkIn, checkOut) {
-  const res = await api.post("/room-reservations/calculate-price", {
+  const res = await api.post("/reservations", {
     room_id: roomId,
     check_in_date: checkIn,
     check_out_date: checkOut,

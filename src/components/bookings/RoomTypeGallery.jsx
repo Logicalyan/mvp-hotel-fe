@@ -5,13 +5,13 @@ import { Maximize2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
+export default function RoomTypeGallery({ images = [], roomTypeName = "Tipe" }) {
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Pastikan images selalu array
   const imageList = Array.isArray(images) ? images : [];
-  const hasImages = imageList.length > 0;
+  const hasImages = imageList.length > 0;   
 
   // Format URL gambar
   const getImageUrl = (imageUrl) => {
@@ -23,7 +23,7 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
   // Generate slides untuk lightbox
   const slides = imageList.map((img) => ({
     src: getImageUrl(img.image_url),
-    alt: `${hotelName} - Image ${img.id}`,
+    alt: `${roomTypeName} - Image ${img.id}`,
   }));
 
   // Navigasi gambar
@@ -56,7 +56,7 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-gray-600 font-medium mb-1">Belum Ada Foto Hotel</p>
+            <p className="text-gray-600 font-medium mb-1">Belum Ada Foto Room Type</p>
             <p className="text-gray-400 text-sm">Foto akan tersedia segera</p>
           </div>
         </div>
@@ -64,22 +64,19 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
     );
   }
 
-  // Layout baru: gambar kiri (utama) dan kanan (3 gambar)
-  const mainImage = slides[0] || { src: "/placeholder-hotel.jpg", alt: "Main Image" };
-  const rightTopImage = slides[1] || { src: "/placeholder-hotel.jpg", alt: "Right Top Image" };
-  const rightBottomLeftImage = slides[2] || { src: "/placeholder-hotel.jpg", alt: "Right Bottom Left Image" };
-  const rightBottomRightImage = slides[3] || { src: "/placeholder-hotel.jpg", alt: "Right Bottom Right Image" };
-  const hasMoreImages = slides.length > 4;
+  const mainImage = slides[0];
+  const thumbnailImages = slides.slice(1, 5);
+  const hasMoreImages = slides.length > 5;
 
   return (
     <>
-      {/* Gallery Container - Layout Baru */}
+      {/* Gallery Container */}
       <div className="space-y-4 mb-8">
         {/* Main Gallery Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Gambar Utama di Kiri (50% lebar) */}
+          {/* Main Image */}
           <div
-            className="lg:col-span-2 relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden cursor-pointer group"
+            className="lg:col-span-3 relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden cursor-pointer group"
             onClick={() => {
               setCurrentIndex(0);
               setOpen(true);
@@ -113,94 +110,37 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
             </div>
           </div>
 
-          {/* Container Gambar Kanan (50% lebar) */}
-          <div className="lg:col-span-2 grid grid-rows-2 gap-4 h-[400px] md:h-[500px]">
-            {/* Gambar Kanan Atas - Tinggi 50% */}
-            <div
-              className="relative rounded-2xl overflow-hidden cursor-pointer group"
-              onClick={() => {
-                setCurrentIndex(1);
-                setOpen(true);
-              }}
-            >
-              <img
-                src={rightTopImage.src}
-                alt={rightTopImage.alt}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                loading="lazy"
-              />
-              
-              {/* Overlay for last thumbnail if there are more images */}
-              {slides.length <= 2 && hasMoreImages && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center">
-                    <p className="text-white text-2xl font-bold mb-1">
-                      +{slides.length - 2}
-                    </p>
-                    <p className="text-white/80 text-sm">Foto Lainnya</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Container Gambar Bawah - 2 gambar dalam grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Gambar Kiri Bawah */}
+          {/* Thumbnails Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {thumbnailImages.map((slide, index) => (
               <div
-                className="relative rounded-2xl overflow-hidden cursor-pointer group"
+                key={index}
+                className="relative h-[190px] md:h-[240px] rounded-xl overflow-hidden cursor-pointer group"
                 onClick={() => {
-                  setCurrentIndex(2);
+                  setCurrentIndex(index + 1);
                   setOpen(true);
                 }}
               >
                 <img
-                  src={rightBottomLeftImage.src}
-                  alt={rightBottomLeftImage.alt}
+                  src={slide.src}
+                  alt={slide.alt}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   loading="lazy"
                 />
                 
                 {/* Overlay for last thumbnail if there are more images */}
-                {slides.length <= 3 && hasMoreImages && (
+                {index === 3 && hasMoreImages && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <div className="text-center">
                       <p className="text-white text-2xl font-bold mb-1">
-                        +{slides.length - 3}
+                        +{slides.length - 5}
                       </p>
                       <p className="text-white/80 text-sm">Foto Lainnya</p>
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Gambar Kanan Bawah */}
-              <div
-                className="relative rounded-2xl overflow-hidden cursor-pointer group"
-                onClick={() => {
-                  setCurrentIndex(3);
-                  setOpen(true);
-                }}
-              >
-                <img
-                  src={rightBottomRightImage.src}
-                  alt={rightBottomRightImage.alt}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  loading="lazy"
-                />
-                
-                {/* Overlay for last thumbnail if there are more images */}
-                {slides.length <= 4 && hasMoreImages && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-white text-2xl font-bold mb-1">
-                        +{slides.length - 4}
-                      </p>
-                      <p className="text-white/80 text-sm">Foto Lainnya</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -208,7 +148,7 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              {slides.slice(0, 4).map((_, idx) => (
+              {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
@@ -224,11 +164,6 @@ export default function HotelGallery({ images = [], hotelName = "Hotel" }) {
                   aria-label={`Go to image ${idx + 1}`}
                 />
               ))}
-              {slides.length > 4 && (
-                <div className="text-sm text-gray-500 ml-1">
-                  +{slides.length - 4} lainnya
-                </div>
-              )}
             </div>
             <span className="text-sm text-gray-500 ml-2">
               {slides.length} foto

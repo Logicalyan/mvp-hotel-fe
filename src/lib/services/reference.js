@@ -66,3 +66,9 @@ export async function getBedTypes() {
   const res = await api.get('/references/bed-types');
   return res.data.data;
 }
+
+
+export async function getHotelFacilities() {
+  const res = await api.get("/references/facilities");
+  return res.data.data || [];
+}

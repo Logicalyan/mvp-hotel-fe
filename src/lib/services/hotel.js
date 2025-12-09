@@ -73,8 +73,28 @@ export async function getHotelDetail(id) {
   const hotel = res.data.data;
 
   // Ambil room types langsung di sini biar 1 call aja (bisa diganti parallel kalau mau)
-  const roomRes = await api.get(`/hotel/${id}/room-types?per_page=50`);
+  const roomRes = await api.get(`/hostel/${id}/room-types?per_page=50`);
   hotel.room_types = roomRes.data.data.data;
 
   return hotel;
+}
+
+// lib/services/hotel.js
+export async function getRoomTypeDetail(hotelId, roomTypeId) {
+  try {
+    const res = await api.get(`/room-types/${roomTypeId}`);
+    const roomType = res.data.data;
+    
+    // Validasi dengan Number conversion
+    if (Number(roomType.hotel_id) !== Number(hotelId)) {
+      throw new Error('Room type tidak ditemukan di hotel ini');
+    }
+    
+    return roomType;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      throw new Error('Room type tidak ditemukan');
+    }
+    throw error;
+  }
 }

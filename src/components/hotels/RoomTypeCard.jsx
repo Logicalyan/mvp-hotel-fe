@@ -1,7 +1,7 @@
 import { Bed, Users, Wifi, Tv, Wind, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
+import Link from "next/link";
 
 const facilityIcons = {
   wifi: <Wifi className="h-4 w-4" />,
@@ -10,15 +10,17 @@ const facilityIcons = {
   breakfast: <Coffee className="h-4 w-4" />,
 };
 
-export default function RoomTypeCard({ roomType, onBook }) {
+export default function RoomTypeCard({ roomType, hotelId, onBook }) {
   const price = roomType.prices?.[0];
   const weekday = price?.weekday_price || 0;
   const weekend = price?.weekend_price || 0;
   const discount = price?.discount || 0;
 
+  // AMAN: pake hotelId dari props, atau fallback ke roomType.hotel.id
+  const currentHotelId = hotelId || roomType.hotel?.id;
+
   const getBedInfo = () => {
     if (!roomType.beds || roomType.beds.length === 0) return "Tidak ada informasi tempat tidur";
-    
     return roomType.beds
       .map(bed => `${bed.quantity} ${bed.bedType?.name || "Tempat Tidur"}`)
       .join(", ");
@@ -74,7 +76,6 @@ export default function RoomTypeCard({ roomType, onBook }) {
               {roomType.facilities.slice(0, 4).map((facility) => {
                 const lowerName = facility.name.toLowerCase();
                 let icon = facilityIcons.wifi;
-                
                 if (lowerName.includes("tv")) icon = facilityIcons.tv;
                 else if (lowerName.includes("ac") || lowerName.includes("air")) icon = facilityIcons.ac;
                 else if (lowerName.includes("sarapan")) icon = facilityIcons.breakfast;
@@ -120,12 +121,12 @@ export default function RoomTypeCard({ roomType, onBook }) {
               </div>
               <p className="text-sm text-gray-500">per malam • Termasuk pajak</p>
             </div>
-            <Button 
-              size="lg" 
-              onClick={onBook}
-              className="bg-blue-600 hover:bg-blue-700 px-8"
-            >
-              Pilih Kamar
+
+            {/* PAKAI currentHotelId → pasti aman */}
+            <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700 px-8">
+              <Link href={`/home/hotel/${currentHotelId}/room-type/${roomType.id}`}>
+                Pilih Kamar
+              </Link>
             </Button>
           </div>
         </div>

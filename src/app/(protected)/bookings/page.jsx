@@ -5,9 +5,11 @@ import { getHotelDetail } from "@/lib/services/hotel";
 import HotelGallery from "@/components/hotels/HotelGallery";
 import HotelInfo from "@/components/hotels/HotelInfo";
 import RoomTypeCard from "@/components/hotels/RoomTypeCard";
+import BookingCard from "@/components/hotels/BookingCard";
 import BookingModal from "@/components/hotels/BookingModal";
 import HotelTabs from "@/components/hotels/HotelTabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import HotelBookingCard from "@/components/hotels/HotelBookingCard";
 
 export default function HotelDetail({ params }) {
   const { id } = React.use(params);

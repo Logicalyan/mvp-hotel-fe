@@ -25,6 +25,7 @@ const getFacilityInfo = (name) => {
 };
 
 export default function HotelInfo({ hotel }) {
+  console.log("Data Hotel", hotel)
   const rating = hotel.rating || 4.8;
   const reviewCount = hotel.review_count || 128;
 
@@ -88,39 +89,41 @@ export default function HotelInfo({ hotel }) {
 
           <div className="flex items-center gap-2 text-gray-600">
             <MapPin className="h-5 w-5 flex-shrink-0" />
-            <span className="truncate">
-              {hotel.city?.name || hotel.district?.name || "Lokasi tidak tersedia"}
-            </span>
+             <span className="truncate">
+    {[
+      hotel.address,
+      hotel.sub_district?.name,
+      hotel.district?.name,
+      hotel.city?.name,
+      hotel.province?.name
+    ].filter(Boolean).join(', ') || "Lokasi tidak tersedia"}
+  </span>
           </div>
         </div>
       </div>
 
-      {/* Popular Facilities */}
-      {popularFacilities.length > 0 && (
-        <div className="bg-gray-50 p-5 rounded-xl">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Fasilitas Populer</p>
-          <div className="flex flex-wrap gap-3">
-            {popularFacilities.map((facility) => {
-              const { icon, color } = getFacilityInfo(facility.name);
-              return (
-                <Badge
-                  key={facility.id}
-                  variant="secondary"
-                  className={`px-4 py-2 text-sm flex items-center gap-2 ${color}`}
-                >
-                  {icon}
-                  {facility.name}
-                </Badge>
-              );
-            })}
-            {hotel.facilities?.length > 6 && (
-              <Badge variant="outline" className="px-4 py-2 text-sm">
-                +{hotel.facilities.length - 6} lainnya
-              </Badge>
-            )}
+        {/* Popular Facilities */}
+        {hotel.facilities?.length > 0 && (
+          <div className="bg-gray-50 p-5 rounded-xl">
+            <p className="text-sm font-semibold text-gray-700 mb-3">Fasilitas Populer</p>
+            <div className="flex flex-wrap gap-3">
+              {hotel.facilities.map((facility) => {
+                const { icon, color } = getFacilityInfo(facility.name);
+                return (
+                  <Badge
+                    key={facility.id}
+                    variant="secondary"
+                    className={`px-4 py-2 text-sm flex items-center gap-2 ${color}`}
+                  >
+                    {icon}
+                    {facility.name}
+                  </Badge>
+                );
+              })}
+             
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Action Buttons */}
       <div className="flex gap-3 pt-2">
@@ -146,16 +149,16 @@ export default function HotelInfo({ hotel }) {
       </div>
 
       {/* Full Address */}
-      <div className="border-t pt-6">
+      {/* <div className="border-t pt-6">
         <h3 className="font-semibold text-gray-900 mb-2">Alamat Lengkap</h3>
         <p className="text-gray-700 leading-relaxed">
           {hotel.address}
-          {hotel.subDistrict && `, ${hotel.subDistrict.name}`}
+          {hotel.sub_district && `, ${hotel.sub_district.name}`}
           {hotel.district && `, ${hotel.district.name}`}
           {hotel.city && `, ${hotel.city.name}`}
           {hotel.province && `, ${hotel.province.name}`}
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }

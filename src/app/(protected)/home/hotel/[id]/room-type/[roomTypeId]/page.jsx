@@ -137,7 +137,9 @@ export default function RoomTypeDetailPage() {
           </div>
 
           {/* Right: Sticky Booking Card */}
-        <HotelBookingCard/>
+        <HotelBookingCard
+        hotel={hotel}
+        roomType={roomType}/>
         </div>
       </div>
 

@@ -88,7 +88,8 @@ export default function HotelBookingCard({ hotel, roomType }) {
     const tax = subtotal * taxRate;
     
     // Total akhir
-    const grandTotal = subtotal + tax;
+    // const grandTotal = subtotal + tax;
+    const grandTotal = subtotal;
 
     setCalculatedPrice({
       nights,
@@ -109,47 +110,48 @@ export default function HotelBookingCard({ hotel, roomType }) {
   }, [checkIn, checkOut, weekdayPrice, weekendPrice, discount]);
 
   const handleBook = async () => {
-    if (!checkIn || !checkOut) {
-      toast.error("Harap pilih tanggal check-in dan check-out");
-      return;
-    }
+  if (!checkIn || !checkOut) {
+    toast.error("Harap pilih tanggal check-in dan check-out");
+    return;
+  }
 
-    if (!guestName || !guestPhone) {
-      toast.error("Harap isi nama lengkap dan nomor telepon");
-      return;
-    }
+  if (!guestName || !guestPhone) {
+    toast.error("Harap isi nama lengkap dan nomor telepon");
+    return;
+  }
 
-    if (calculatedPrice.nights === 0) {
-      toast.error("Durasi menginap minimal 1 malam");
-      return;
-    }
+  if (calculatedPrice.nights === 0) {
+    toast.error("Durasi menginap minimal 1 malam");
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      const payload = {
-        room_type_id: roomType.id,
-        check_in_date: format(checkIn, "yyyy-MM-dd"),
-        check_out_date: format(checkOut, "yyyy-MM-dd"),
-        guest_name: guestName,
-        guest_phone: guestPhone,
-        guest_email: guestEmail || null,
-        total_amount: calculatedPrice.grandTotal
-      };
+  setSubmitting(true);
+  try {
+    const payload = {
+      room_type_id: roomType.id,
+      check_in_date: format(checkIn, "yyyy-MM-dd"),
+      check_out_date: format(checkOut, "yyyy-MM-dd"),
+      guest_name: guestName,
+      guest_phone: guestPhone,
+      guest_email: guestEmail || null,
+      total_amount: calculatedPrice.grandTotal
+    };
+const response = await createReservation(payload);
+    const reservation = response.reservation || response;
 
-      const reservation = await createReservation(payload);
-      toast.success("Reservasi berhasil dibuat!");
-      
-      // Redirect ke Midtrans jika ada token
-      if (reservation.snap_token) {
-        window.snap.pay(reservation.snap_token);
-      }
-    } catch (err) {
-      console.error("Booking error:", err);
-      toast.error(err.response?.data?.message || "Gagal membuat reservasi");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+
+    toast.success("Reservasi berhasil dibuat!");
+    
+    // LANGSUNG REDIRECT KE HALAMAN DETAIL RESERVASI
+    window.location.href = `/reservation/${reservation.id}`;
+    
+  } catch (err) {
+    console.error("Booking error:", err);
+    toast.error(err.response?.data?.message || "Gagal membuat reservasi");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const getDateRangeText = () => {
     if (!checkIn || !checkOut) return "Pilih tanggal";
@@ -298,6 +300,49 @@ export default function HotelBookingCard({ hotel, roomType }) {
           </div>
         </div>
 
+        {/* Guest Information */}
+        <div className="mb-6">
+          <Label className="text-lg font-semibold text-gray-800 mb-4 block">Data Tamu</Label>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-gray-700">Nama Lengkap *</Label>
+              <Input 
+                placeholder="Masukkan nama lengkap sesuai KTP" 
+                value={guestName} 
+                onChange={(e) => setGuestName(e.target.value)}
+                className="h-12"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-gray-700">Nomor Telepon *</Label>
+              <Input 
+                placeholder="Contoh: 081234567890" 
+                value={guestPhone} 
+                onChange={(e) => setGuestPhone(e.target.value)}
+                className="h-12"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-gray-700 flex items-center gap-2">
+                Email
+                <span className="text-sm font-normal text-gray-500">(opsional)</span>
+              </Label>
+              <Input 
+                placeholder="Contoh: nama@email.com" 
+                value={guestEmail} 
+                onChange={(e) => setGuestEmail(e.target.value)}
+                className="h-12"
+                type="email"
+              />
+              <p className="text-xs text-gray-500">
+                Digunakan untuk mengirim konfirmasi reservasi
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Price Breakdown */}
         <div className="mb-6">
           <Label className="text-lg font-semibold text-gray-800 mb-4 block">
@@ -357,19 +402,19 @@ export default function HotelBookingCard({ hotel, roomType }) {
                   </div>
                 )}
                 
-                <Separator className="my-2" />
+                {/* <Separator className="my-2" /> */}
                 
                 {/* Subtotal setelah diskon */}
-                <div className="flex justify-between text-gray-700 font-semibold">
+                {/* <div className="flex justify-between text-gray-700 font-semibold">
                   <span>Subtotal Setelah Diskon</span>
                   <span>Rp {calculatedPrice.subtotal.toLocaleString("id-ID")}</span>
-                </div>
+                </div> */}
                 
-                {/* Pajak */}
+                {/* Pajak
                 <div className="flex justify-between text-gray-700">
                   <span>Pajak & Biaya (10%)</span>
                   <span className="font-medium">Rp {calculatedPrice.tax.toLocaleString("id-ID")}</span>
-                </div>
+                </div> */}
                 
                 {/* Total */}
                 <div className="pt-4 border-t border-gray-200 mt-4">
@@ -398,48 +443,7 @@ export default function HotelBookingCard({ hotel, roomType }) {
           </div>
         </div>
 
-        {/* Guest Information */}
-        <div className="mb-6">
-          <Label className="text-lg font-semibold text-gray-800 mb-4 block">Data Tamu</Label>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-gray-700">Nama Lengkap *</Label>
-              <Input 
-                placeholder="Masukkan nama lengkap sesuai KTP" 
-                value={guestName} 
-                onChange={(e) => setGuestName(e.target.value)}
-                className="h-12"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-gray-700">Nomor Telepon *</Label>
-              <Input 
-                placeholder="Contoh: 081234567890" 
-                value={guestPhone} 
-                onChange={(e) => setGuestPhone(e.target.value)}
-                className="h-12"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-gray-700 flex items-center gap-2">
-                Email
-                <span className="text-sm font-normal text-gray-500">(opsional)</span>
-              </Label>
-              <Input 
-                placeholder="Contoh: nama@email.com" 
-                value={guestEmail} 
-                onChange={(e) => setGuestEmail(e.target.value)}
-                className="h-12"
-                type="email"
-              />
-              <p className="text-xs text-gray-500">
-                Digunakan untuk mengirim konfirmasi reservasi
-              </p>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Terms & Booking Button */}
         <div className="space-y-4">

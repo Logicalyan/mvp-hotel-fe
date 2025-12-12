@@ -24,6 +24,16 @@ export async function calculatePrice(roomId, checkIn, checkOut) {
 }
 
 export async function createReservation(payload) {
-  const res = await api.post("/room-reservations", payload);
-  return res.data.reservation || res.data.data;
+  const res = await api.post("/reservations/user", payload);
+  return res.data.data;
+}
+
+export async function getReservation(id) {
+  const res = await api.get(`/room-reservations/${id}`);
+  return res.data.data;
+}
+
+export async function cancelReservation(id) {
+  const res = await api.post(`/room-reservations/${id}/cancel`);
+  return res.data.data;
 }

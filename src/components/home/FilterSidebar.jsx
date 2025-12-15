@@ -165,7 +165,7 @@ export default function FilterSidebar({ onApply }) {
             <SelectValue placeholder="Pilih Provinsi" />
           </SelectTrigger>
           <SelectContent>
-            {provinces.map(p => (
+            {provinces?.map(p => (
               <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
             ))}
           </SelectContent>

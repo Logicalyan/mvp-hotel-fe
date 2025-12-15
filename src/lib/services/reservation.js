@@ -29,7 +29,7 @@ export async function createReservation(payload) {
 }
 
 export async function getReservation(id) {
-  const res = await api.get(`/room-reservations/${id}`);
+  const res = await api.get(`/reservations/${id}`);
   return res.data.data;
 }
 

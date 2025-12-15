@@ -136,17 +136,20 @@ export default function HotelBookingCard({ hotel, roomType }) {
       guest_email: guestEmail || null,
       total_amount: calculatedPrice.grandTotal
     };
-const response = await createReservation(payload);
-    const reservation = response.reservation || response;
 
-
-    toast.success("Reservasi berhasil dibuat!");
+    console.log('📤 Booking payload:', payload);
     
-    // LANGSUNG REDIRECT KE HALAMAN DETAIL RESERVASI
-    window.location.href = `/reservation/${reservation.id}`;
+    const reservation = await createReservation(payload);
+    
+    console.log('✅ Reservation created:', reservation);
+    
+    toast.success("Reservasi berhasil dibuat!");  
+    
+    // Redirect ke halaman detail
+    router.push(`/reservation/${reservation.id}`);
     
   } catch (err) {
-    console.error("Booking error:", err);
+    console.error("❌ Booking error:", err);
     toast.error(err.response?.data?.message || "Gagal membuat reservasi");
   } finally {
     setSubmitting(false);

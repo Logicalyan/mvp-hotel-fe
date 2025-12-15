@@ -14,20 +14,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Eye, CreditCard, LogIn, LogOut, XCircle } from "lucide-react"
-// import { 
-//     cancelReservation,
-//     checkInReservation,
-//     checkOutReservation 
-// } from "@/lib/services/hotels/reservation"
 
 import { toast } from "sonner"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { DataTableColumnHeader } from "@/components/common/data-table/data-table-column-header"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import { useAuth } from "@/hooks/useAuth"
-import { checkInReservation, checkOutReservation } from "@/lib/services/hotels/reservation"
+import { checkInReservation, checkOutReservation, cancelReservation, expireReservation } from "@/lib/services/hotels/reservation"
 
 // ====================
 // STATUS BADGE
@@ -40,10 +35,13 @@ const StatusBadge = ({ status, type = "reservation" }) => {
             checked_in: { label: "Check In", class: "bg-green-100 text-green-800" },
             checked_out: { label: "Check Out", class: "bg-gray-100 text-gray-800" },
             cancelled: { label: "Dibatalkan", class: "bg-red-100 text-red-800" },
+            expired: { label: "Kadaluwarsa", class: "bg-red-100 text-red-800" },
         },
         payment: {
             pending: { label: "Belum Dibayar", class: "bg-orange-100 text-orange-800" },
             unpaid: { label: "Belum Dibayar", class: "bg-orange-100 text-orange-800" },
+            failed: { label: "Gagal", class: "bg-red-100 text-orange-800" },
+            expired: { label: "Kadaluwarsa", class: "bg-red-100 text-orange-800" },
             paid: { label: "Lunas", class: "bg-green-100 text-green-800" },
             refunded: { label: "Dikembalikan", class: "bg-red-100 text-red-800" },
         },
@@ -54,6 +52,61 @@ const StatusBadge = ({ status, type = "reservation" }) => {
     return <Badge className={item.class}>{item.label}</Badge>
 }
 
+const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s.toString().padStart(2, "0")}`
+}
+
+function PaymentCountdown({ dueAt, onExpire }) {
+    const [remaining, setRemaining] = useState(0)
+    const [expiredCalled, setExpiredCalled] = useState(false)
+
+    useEffect(() => {
+        if (!dueAt) return
+
+        const update = () => {
+            const diff = Math.floor(
+                (new Date(dueAt).getTime() - Date.now()) / 1000
+            )
+
+            setRemaining(diff)
+
+            // 🔥 Trigger expire ONCE
+            if (diff <= 0 && !expiredCalled) {
+                setExpiredCalled(true)
+                onExpire?.()
+            }
+        }
+
+        update()
+        const timer = setInterval(update, 1000)
+        return () => clearInterval(timer)
+    }, [dueAt, expiredCalled, onExpire])
+
+    // if (remaining <= 0) {
+    //     return (
+    //         <span className="text-xs font-medium text-red-600">
+    //             Expired
+    //         </span>
+    //     )
+    // }
+
+    return (
+        <span
+            className={`text-xs font-medium ${remaining <= 300
+                ? "text-red-600"
+                : remaining <= 600
+                    ? "text-orange-600"
+                    : "text-green-600"
+                }`}
+        >
+            ⏳ {Math.floor(remaining / 60)}:{(remaining % 60).toString().padStart(2, "0")}
+        </span>
+    )
+}
+
+
 // ====================
 // RESERVATION ACTIONS
 // ====================
@@ -63,7 +116,7 @@ const ReservationActions = ({ reservation, refreshData }) => {
     const { hotelId, role } = useAuth()
 
     // Admin bisa lihat semua hotel, staff hanya hotel miliknya
-    const currentHotelId = role === "admin" 
+    const currentHotelId = role === "admin"
         ? reservation.roomType?.hotel_id || reservation.room?.room_type?.hotel_id
         : hotelId
 
@@ -164,6 +217,8 @@ const ReservationActions = ({ reservation, refreshData }) => {
         }
     }
 
+    const isExpired = reservation.reservation_status === "expired"
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,54 +239,59 @@ const ReservationActions = ({ reservation, refreshData }) => {
                     </DropdownMenuItem>
                 </Link>
 
-                {/* Tombol Bayar Sekarang */}
-                {(reservation.payment_status === "pending" || reservation.payment_status === "unpaid") && (
+                {/* HANYA TAMPIL JIKA BELUM EXPIRED */}
+                {!isExpired && (
                     <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-green-600 font-medium cursor-pointer"
-                            onClick={handlePayment}
-                            disabled={isPaying}
-                        >
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            {isPaying ? "Memproses..." : "Bayar Sekarang"}
-                        </DropdownMenuItem>
-                    </>
-                )}
+                        {/* Tombol Bayar Sekarang + Batalkan */}
+                        {(reservation.payment_status === "pending" || reservation.payment_status === "unpaid") && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-green-600 font-medium cursor-pointer"
+                                    onClick={handlePayment}
+                                    disabled={isPaying}
+                                >
+                                    <CreditCard className="mr-2 h-4 w-4" />
+                                    {isPaying ? "Memproses..." : "Bayar Sekarang"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="text-orange-600 cursor-pointer"
+                                    onClick={handleCancel}
+                                    disabled={isProcessing}
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    Batalkan
+                                </DropdownMenuItem>
+                            </>
+                        )}
 
-                {/* Check In & Batalkan */}
-                {(reservation.reservation_status === "booked" && reservation.payment_status === "paid") && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                            className="text-green-600 cursor-pointer"
-                            onClick={handleCheckIn}
-                            disabled={isProcessing}
-                        >
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Check In
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                            className="text-orange-600 cursor-pointer"
-                            onClick={handleCancel}
-                            disabled={isProcessing}
-                        >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Batalkan
-                        </DropdownMenuItem>
-                    </>
-                )}
+                        {/* Check In */}
+                        {(reservation.reservation_status === "booked" && reservation.payment_status === "paid") && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-green-600 cursor-pointer"
+                                    onClick={handleCheckIn}
+                                    disabled={isProcessing}
+                                >
+                                    <LogIn className="mr-2 h-4 w-4" />
+                                    Check In
+                                </DropdownMenuItem>
+                            </>
+                        )}
 
-                {/* Check Out */}
-                {reservation.reservation_status === "checked_in" && (
-                    <DropdownMenuItem 
-                        className="text-blue-600 cursor-pointer"
-                        onClick={handleCheckOut}
-                        disabled={isProcessing}
-                    >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Check Out
-                    </DropdownMenuItem>
+                        {/* Check Out */}
+                        {reservation.reservation_status === "checked_in" && (
+                            <DropdownMenuItem
+                                className="text-blue-600 cursor-pointer"
+                                onClick={handleCheckOut}
+                                disabled={isProcessing}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Check Out
+                            </DropdownMenuItem>
+                        )}
+                    </>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
@@ -265,6 +325,11 @@ export const columns = [
         cell: ({ row }) => row.original.roomType?.name || row.original.room?.room_type?.name || "-",
     },
     {
+        accessorKey: "room",
+        header: "Tipe Kamar",
+        cell: ({ row }) => row.original.room.room_number || "-",
+    },
+    {
         accessorKey: "check_in_date",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Check In Date" />,
         cell: ({ row }) => {
@@ -278,13 +343,107 @@ export const columns = [
         },
     },
     {
+        accessorKey: "payment_due_at",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Batas Waktu Bayar" />
+        ),
+        cell: ({ row, table }) => {
+            const dueAt = row.getValue("payment_due_at")
+            const paymentStatus = row.original.payment_status
+            const reservationStatus = row.original.reservation_status
+            const reservationId = row.original.id
+            const refreshData = table.options.meta?.refreshData
+
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="text-xs">
+                        {format(new Date(dueAt), "dd MMM yyyy HH:mm", { locale: id })}
+                    </span>
+
+                    {/* <PaymentCountdown
+                        dueAt={dueAt}
+                        onExpire={async () => {
+                            try {
+                                await expireReservation(reservationId)
+                                toast.info("Reservasi otomatis kadaluwarsa")
+                                refreshData?.()
+                            } catch (e) {
+                                // silent
+                            }
+                        }}
+                    /> */}
+                </div>
+            )
+        },
+    },
+    // {
+    //     accessorKey: "payment_due_at",
+    //     header: ({ column }) => (
+    //         <DataTableColumnHeader column={column} title="Payment Due" />
+    //     ),
+    //     cell: ({ row }) => {
+    //         const dueAt = row.getValue("payment_due_at")
+    //         const paymentStatus = row.original.payment_status
+
+    //         if (!dueAt || paymentStatus === "paid") {
+    //             return <span className="text-muted-foreground">-</span>
+    //         }
+
+    //         return (
+    //             <div className="flex flex-col gap-1">
+    //                 <span className="text-xs">
+    //                     {format(new Date(dueAt), "dd MMM yyyy HH:mm", { locale: id })}
+    //                 </span>
+
+    //                 <PaymentCountdown dueAt={dueAt} />
+    //             </div>
+    //         )
+    //     },
+    // },
+    // {
+    //     accessorKey: "payment_due_at",
+    //     header: ({ column }) => (
+    //         <DataTableColumnHeader column={column} title="Payment Due" />
+    //     ),
+    //     cell: ({ row, table }) => {
+    //         const dueAt = row.getValue("payment_due_at")
+    //         const paymentStatus = row.original.payment_status
+    //         const reservationId = row.original.id
+
+    //         if (!dueAt || paymentStatus === "paid") {
+    //             return <span className="text-muted-foreground">-</span>
+    //         }
+
+    //         const refreshData = table.options.meta?.refreshData
+
+    //         return (
+    //             <div className="flex flex-col gap-1">
+    //                 <span className="text-xs">
+    //                     {format(new Date(dueAt), "dd MMM yyyy HH:mm", { locale: id })}
+    //                 </span>
+
+    //                 <PaymentCountdown
+    //                     dueAt={dueAt}
+    //                     onExpire={async () => {
+    //                         try {
+    //                             await expireReservation(reservationId)
+    //                         } catch (e) {
+    //                             // silent fail
+    //                         }
+    //                     }}
+    //                 />
+    //             </div>
+    //         )
+    //     },
+    // },
+    {
         accessorKey: "actual_check_in",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Actual Check In" />,
         cell: ({ row }) => {
             const checkIn = row.getValue("actual_check_in")
             if (!checkIn) return <span className="text-muted-foreground">-</span>
             try {
-                return format(new Date(checkIn), "dd MMM yyyy HH.ii", { locale: id })
+                return format(new Date(checkIn), "dd MMM yyyy HH.mm", { locale: id })
             } catch {
                 return <span className="text-muted-foreground">-</span>
             }
@@ -310,7 +469,7 @@ export const columns = [
             const checkIn = row.getValue("actual_check_out")
             if (!checkIn) return <span className="text-muted-foreground">-</span>
             try {
-                return format(new Date(checkIn), "dd MMM yyyy HH.ii", { locale: id })
+                return format(new Date(checkIn), "dd MMM yyyy HH.mm", { locale: id })
             } catch {
                 return <span className="text-muted-foreground">-</span>
             }

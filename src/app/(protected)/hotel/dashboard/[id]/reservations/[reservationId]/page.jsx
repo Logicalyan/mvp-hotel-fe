@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getReservationDetail } from "@/lib/services/hotels/reservation";
+import { getReservationDetail, expireReservation } from "@/lib/services/hotels/reservation";
 import { updateReservationStatus } from "@/lib/services/hotels/reservation";
 import { useAuth } from "@/hooks/useAuth";
 import { getHotelById } from "@/lib/services/hotel";
@@ -49,6 +49,76 @@ export default function ReservationDetailPage() {
     const [reservation, setReservation] = useState(null);
     const [hotel, setHotel] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    function PaymentCountdownDetail({
+        dueAt,
+        paymentStatus,
+        reservationId,
+        onExpired
+    }) {
+        const [remaining, setRemaining] = useState(0);
+        const [expiredCalled, setExpiredCalled] = useState(false);
+
+        useEffect(() => {
+            if (!dueAt || paymentStatus !== "pending") return;
+
+            const tick = async () => {
+                const diff = Math.floor(
+                    (new Date(dueAt).getTime() - Date.now()) / 1000
+                );
+
+                setRemaining(diff);
+
+                // 🔥 WAKTU HABIS → HIT API SEKALI
+                if (diff <= 0 && !expiredCalled) {
+                    setExpiredCalled(true);
+
+                    try {
+                        await expireReservation(reservationId);
+                        onExpired?.(); // refresh data parent
+                    } catch (err) {
+                        console.error("Expire reservation failed", err);
+                    }
+                }
+            };
+
+            tick();
+            const interval = setInterval(tick, 1000);
+            return () => clearInterval(interval);
+        }, [dueAt, paymentStatus, reservationId, expiredCalled, onExpired]);
+
+        if (paymentStatus !== "pending") return null;
+
+        if (remaining <= 0) {
+            return (
+                <Badge variant="destructive" className="mt-2">
+                    ⛔ Waktu pembayaran habis
+                </Badge>
+            );
+        }
+
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+
+        return (
+            <div className="flex items-center gap-2 text-sm font-semibold text-orange-600 mt-2">
+                <Clock className="h-4 w-4" />
+                <span>
+                    Sisa waktu pembayaran: {minutes}:{String(seconds).padStart(2, "0")}
+                </span>
+            </div>
+        );
+    }
+
+    const refreshReservation = async () => {
+        try {
+            const updated = await getReservationDetail(hotelId, reservationId);
+            setReservation(updated);
+        } catch (err) {
+            console.error("Gagal refresh reservasi", err);
+        }
+    };
+
 
     useEffect(() => {
         async function loadData() {
@@ -153,6 +223,7 @@ export default function ReservationDetailPage() {
                 pending: ["bg-orange-100 text-orange-800", "Belum Dibayar"],
                 paid: ["bg-green-100 text-green-800", "Lunas"],
                 refunded: ["bg-red-100 text-red-800", "Dikembalikan"],
+                failed: ["bg-red-100 text-red-800", "Gagal"],
             }
         };
         const [variant, label] = config[type][status] || ["bg-gray-100 text-gray-800", status];
@@ -185,6 +256,12 @@ export default function ReservationDetailPage() {
     }
 
     const currentHotelId = role === "admin" ? hotelId : authHotelId;
+
+    const isExpired =
+        reservation.payment_status === "pending" &&
+        reservation.payment_due_at &&
+        new Date(reservation.payment_due_at).getTime() <= Date.now();
+
 
     return (
         <div className="container mx-auto p-4 md:p-6 max-w-6xl space-y-6">
@@ -220,15 +297,25 @@ export default function ReservationDetailPage() {
                                         Total Tagihan: <strong>Rp {Number(reservation.total_price).toLocaleString("id-ID")}</strong>
                                     </p>
                                 </div>
+
+                                {/* 🔥 COUNTDOWN DI SINI */}
+                                <PaymentCountdownDetail
+                                    dueAt={reservation.payment_due_at}
+                                    paymentStatus={reservation.payment_status}
+                                    reservationId={reservation.id}
+                                    onExpired={refreshReservation}
+                                />
+
                                 <Button
                                     size="lg"
-                                    className="bg-green-600 hover:bg-green-700 text-white font-bold px-6"
+                                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-6"
                                     onClick={handlePayment}
-                                    disabled={isPaying}
+                                    disabled={isPaying || isExpired}
                                 >
                                     <CreditCard className="mr-2 h-5 w-5" />
-                                    {isPaying ? "Memproses..." : "Bayar Sekarang"}
+                                    {isExpired ? "Waktu Habis" : isPaying ? "Memproses..." : "Bayar Sekarang"}
                                 </Button>
+
                             </div>
                         </CardContent>
                     </Card>
@@ -245,6 +332,27 @@ export default function ReservationDetailPage() {
                         </CardContent>
                     </Card>
                 )}
+
+                {["expired", "failed"].includes(reservation.payment_status) && (
+                    <Card className="border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-sm">
+                        <CardContent className="p-4 md:p-6">
+                            <div className="flex flex-col items-center text-center">
+                                <XCircle className="h-10 w-10 md:h-12 md:w-12 text-red-600 mb-3" />
+                                <h3 className="text-xl md:text-2xl font-bold text-red-800">
+                                    Pembayaran Gagal
+                                </h3>
+                                <p className="text-red-700 mt-1">
+                                    Waktu pembayaran telah berakhir atau transaksi tidak berhasil.
+                                </p>
+
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Silakan buat reservasi ulang untuk melanjutkan pemesanan.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
             </div>
 
             {/* Main Content Grid */}
@@ -307,7 +415,7 @@ export default function ReservationDetailPage() {
                                     <div className="flex items-center gap-2">
                                         <Hash className="h-4 w-4 text-muted-foreground" />
                                         <p className="font-semibold text-lg">
-                                            Kamar {reservation.room?.number || reservation.room?.id || "Tidak tersedia"}
+                                            Kamar {reservation.room?.room_number || reservation.room?.id || "Tidak tersedia"}
                                         </p>
                                     </div>
                                 </div>
@@ -495,6 +603,13 @@ export default function ReservationDetailPage() {
                                 </div>
                                 {getStatusBadge(reservation.payment_status, "payment")}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Batas pembayaran:{" "}
+                                {format(new Date(reservation.payment_due_at), "dd MMM yyyy HH:mm", {
+                                    locale: id,
+                                })}
+                            </p>
+
                         </CardContent>
                     </Card>
 

@@ -58,6 +58,16 @@ export async function checkOutReservation(reservationId) {
   return res.data.data
 }
 
+export async function cancelReservation(reservationId) {
+  const res = await api.post(`reservations/${reservationId}/cancel`);
+  return res.data.data
+}
+
+export async function expireReservation(reservationId) {
+  const res = await api.post(`reservations/${reservationId}/expire`);
+  return res.data.data
+}
+
 /**
  * (Opsional) Export semua biar rapih
  */

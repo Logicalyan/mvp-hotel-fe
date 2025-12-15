@@ -96,7 +96,7 @@ export function ReservationByHotelFilters({ filters, onFiltersChange }) {
                             <SelectItem value="all">Semua Status</SelectItem>
                             <SelectItem value="pending">Belum Bayar</SelectItem>
                             <SelectItem value="paid">Lunas</SelectItem>
-                            <SelectItem value="refunded">Refund</SelectItem>
+                            <SelectItem value="failed">Gagal</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

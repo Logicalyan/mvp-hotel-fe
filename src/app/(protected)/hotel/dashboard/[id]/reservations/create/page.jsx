@@ -12,24 +12,23 @@ import { id } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft, User, Phone, Mail } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 import { getHotelById } from "@/lib/services/hotel";
-import { getRoomsByHotel } from "@/lib/services/hotels/room"; // kamu pasti punya ini
-import { createReservationByHotel, getReservationsByHotel } from "@/lib/services/hotels/reservation";
+import { getRoomTypesByHotel } from "@/lib/services/hotels/roomType";
+import { createReservationByHotel } from "@/lib/services/hotels/reservation";
 import { useAuth } from "@/hooks/useAuth";
 
 const schema = z.object({
-    room_id: z.string().min(1, "Pilih kamar terlebih dahulu"),
+    room_type_id: z.string().min(1, "Pilih tipe kamar terlebih dahulu"),
     guest_name: z.string().min(2, "Nama tamu minimal 2 karakter"),
     guest_phone: z.string().min(8, "No. telepon tidak valid"),
     guest_email: z.string().email().or(z.literal("")).optional(),
@@ -38,13 +37,39 @@ const schema = z.object({
     }),
     check_out_date: z.date({
         required_error: "Tanggal check-out wajib diisi",
-    }).refine((date) => date > new Date(), "Check-out tidak boleh hari ini atau kemarin"),
+    }),
     planned_check_in: z.string().optional(),
     planned_check_out: z.string().optional(),
 }).refine((data) => data.check_out_date > data.check_in_date, {
     message: "Tanggal check-out harus setelah check-in",
     path: ["check_out_date"],
 });
+
+
+const isPriceCoveringRange = (prices, checkIn, checkOut) => {
+    if (!prices || prices.length === 0) return false;
+
+    const checkInStr = format(checkIn, "yyyy-MM-dd");
+    const checkOutStr = format(checkOut, "yyyy-MM-dd");
+
+    return prices.some(price => {
+        const isCovering =
+            price.is_active &&
+            price.start_date <= checkInStr &&
+            price.end_date >= checkOutStr;
+
+        console.log("[DEBUG] Price coverage check:", {
+            price_id: price.id,
+            start: price.start_date,
+            end: price.end_date,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
+            isCovering,
+        });
+
+        return isCovering;
+    });
+};
 
 export default function CreateReservationPage() {
     const router = useRouter();
@@ -55,14 +80,13 @@ export default function CreateReservationPage() {
     const [accessDenied, setAccessDenied] = useState(false);
 
     const [hotel, setHotel] = useState(null);
-    const [rooms, setRooms] = useState([]);
+    const [roomTypes, setRoomTypes] = useState([]);
     const [hotelLoading, setHotelLoading] = useState(true);
-    const [roomsLoading, setRoomsLoading] = useState(true);
+    const [roomTypesLoading, setRoomTypesLoading] = useState(false);
 
     const {
         register,
         handleSubmit,
-        control,
         watch,
         setValue,
         formState: { errors, isSubmitting },
@@ -79,7 +103,7 @@ export default function CreateReservationPage() {
 
     const checkInDate = watch("check_in_date");
     const checkOutDate = watch("check_out_date");
-    const selectedRoomId = watch("room_id");
+    const selectedRoomTypeId = watch("room_type_id");
 
     // === SECURITY: Cek akses staff hotel ===
     useEffect(() => {
@@ -90,7 +114,7 @@ export default function CreateReservationPage() {
         }
     }, [authLoading, role, hotelId, authHotelId]);
 
-    // Load hotel & rooms
+    // Load hotel data
     useEffect(() => {
         async function loadData() {
             try {
@@ -104,27 +128,109 @@ export default function CreateReservationPage() {
             }
         }
 
-        async function loadRooms() {
-            try {
-                setRoomsLoading(true);
-                const data = await getRoomsByHotel(hotelId);
-                setRooms(data.rooms || data); // sesuaikan struktur response kamu
-            } catch (err) {
-                toast.error("Gagal memuat daftar kamar");
-            } finally {
-                setRoomsLoading(false);
-            }
-        }
-
         if (hotelId) {
             loadData();
-            loadRooms();
         }
     }, [hotelId]);
 
+    // ✅ Load room types HANYA JIKA check-in & check-out sudah dipilih
+    useEffect(() => {
+        async function loadRoomTypes() {
+            if (!checkInDate || !checkOutDate) {
+                console.log("[DEBUG] RoomType skipped: date not selected");
+                setRoomTypes([]);
+                setValue("room_type_id", "", { shouldValidate: true });
+                return;
+            }
+
+            try {
+                setRoomTypesLoading(true);
+
+                const filters = {
+                    start_date: format(checkInDate, "yyyy-MM-dd"),
+                    end_date: format(checkOutDate, "yyyy-MM-dd"),
+                };
+
+                console.log("[DEBUG] Fetch room types with filters:", {
+                    hotelId,
+                    filters,
+                });
+
+                const data = await getRoomTypesByHotel(hotelId, 1, filters, 100);
+
+                console.log("[DEBUG] Raw room types response:", data);
+
+                const availableRoomTypes = data.roomTypesByHotel.filter(type => {
+                    const hasValidPrice = isPriceCoveringRange(
+                        type.prices,
+                        checkInDate,
+                        checkOutDate
+                    );
+
+                    if (!hasValidPrice) return false;
+
+                    console.log("[DEBUG] RoomType availability summary:", {
+                        room_type_id: type.id,
+                        name: type.name,
+                        available_rooms_count: type.available_rooms_count,
+                    });
+
+                    // ✅ PAKAI HASIL BACKEND
+                    return (type.available_rooms_count ?? 0) > 0;
+                });
+
+                console.log("[DEBUG] Available room types:", availableRoomTypes);
+
+                setRoomTypes(availableRoomTypes);
+
+                if (availableRoomTypes.length === 0) {
+                    toast.info("Tidak ada tipe kamar tersedia");
+                }
+            } catch (err) {
+                console.error("[ERROR] Load room types failed:", err);
+                setRoomTypes([]);
+            } finally {
+                setRoomTypesLoading(false);
+            }
+        }
+
+        loadRoomTypes();
+    }, [hotelId, checkInDate, checkOutDate, setValue]);
+
+
+
+    // Helper: Hitung harga untuk rentang tanggal
+    const calculatePriceRange = (prices, checkIn, checkOut) => {
+        if (!prices || prices.length === 0) return null;
+
+        const checkInStr = format(checkIn, "yyyy-MM-dd");
+        const checkOutStr = format(checkOut, "yyyy-MM-dd");
+
+        const validPrices = prices.filter(price =>
+            price.is_active &&
+            price.start_date <= checkInStr &&
+            price.end_date >= checkOutStr
+        );
+
+        if (validPrices.length === 0) return null;
+
+        const weekdayPrices = validPrices.map(p => Number(p.weekday_price));
+        const weekendPrices = validPrices.map(p => Number(p.weekend_price));
+
+        return {
+            min: Math.min(...weekdayPrices, ...weekendPrices),
+            max: Math.max(...weekdayPrices, ...weekendPrices),
+            currency: validPrices[0].currency,
+        };
+    };
+
+
     const onSubmit = async (values) => {
         const payload = {
-            ...values,
+            room_type_id: values.room_type_id,
+            guest_name: values.guest_name,
+            guest_phone: values.guest_phone,
+            guest_email: values.guest_email || undefined,
             check_in_date: format(values.check_in_date, "yyyy-MM-dd"),
             check_out_date: format(values.check_out_date, "yyyy-MM-dd"),
             planned_check_in: values.planned_check_in || undefined,
@@ -147,7 +253,7 @@ export default function CreateReservationPage() {
     };
 
     // Loading state
-    if (authLoading || hotelLoading || roomsLoading) {
+    if (authLoading || hotelLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
@@ -185,69 +291,111 @@ export default function CreateReservationPage() {
                     </p>
                 </div>
 
-                {/* Pilih Kamar */}
-                <div className="space-y-2">
-                    <Label>Kamar *</Label>
-                    <select
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        {...register("room_id")}
-                    >
-                        <option value="">Pilih kamar...</option>
-                        {rooms.map((room) => (
-                            <option key={room.id} value={room.id}>
-                                {room.room_type.name} - Kamar {room.room_number}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.room_id && <p className="text-sm text-red-500">{errors.room_id.message}</p>}
-                </div>
-
-                {/* Tanggal Check In & Out */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Label>Check In *</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {checkInDate ? format(checkInDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={checkInDate}
-                                    onSelect={(date) => setValue("check_in_date", date)}
-                                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        {errors.check_in_date && <p className="text-sm text-red-500">{errors.check_in_date.message}</p>}
+                {/* ✅ STEP 1: Pilih Tanggal Check In & Out DULU */}
+                <div className="border rounded-lg p-6 bg-blue-50 dark:bg-blue-950">
+                    <div className="flex items-start gap-2 mb-4">
+                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                            <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                                Langkah 1: Pilih Tanggal
+                            </h3>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                                Pilih tanggal check-in dan check-out terlebih dahulu untuk melihat ketersediaan kamar
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Check Out *</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {checkOutDate ? format(checkOutDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={checkOutDate}
-                                    onSelect={(date) => setValue("check_out_date", date)}
-                                    disabled={(date) => !checkInDate || date <= checkInDate}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        {errors.check_out_date && <p className="text-sm text-red-500">{errors.check_out_date.message}</p>}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label>Check In *</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {checkInDate ? format(checkInDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={checkInDate}
+                                        onSelect={(date) => setValue("check_in_date", date)}
+                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            {errors.check_in_date && <p className="text-sm text-red-500">{errors.check_in_date.message}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Check Out *</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {checkOutDate ? format(checkOutDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={checkOutDate}
+                                        onSelect={(date) => setValue("check_out_date", date)}
+                                        disabled={(date) => !checkInDate || date <= checkInDate}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            {errors.check_out_date && <p className="text-sm text-red-500">{errors.check_out_date.message}</p>}
+                        </div>
                     </div>
                 </div>
+
+                {/* ✅ STEP 2: Pilih Tipe Kamar (muncul setelah tanggal dipilih) */}
+                {checkInDate && checkOutDate && (
+                    <div className="space-y-2">
+                        <Label>Tipe Kamar *</Label>
+                        {roomTypesLoading ? (
+                            <div className="flex items-center gap-2 p-3 border rounded-md bg-gray-50">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                <span className="text-sm">Memuat tipe kamar tersedia...</span>
+                            </div>
+                        ) : roomTypes.length > 0 ? (
+                            <>
+                                <select
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    {...register("room_type_id")}
+                                >
+                                    <option value="">Pilih tipe kamar...</option>
+                                    {roomTypes.map((type) => {
+                                        const priceRange = calculatePriceRange(type.prices, checkInDate, checkOutDate);
+                                        return (
+                                            <option key={type.id} value={type.id}>
+                                                {type.name}
+                                                {type.capacity && ` - ${type.capacity} orang`}
+                                                {priceRange && ` - ${priceRange.currency} ${priceRange.min.toLocaleString('id-ID')}${priceRange.min !== priceRange.max ? ` - ${priceRange.max.toLocaleString('id-ID')}` : ''}`}
+                                                {` (${type.available_rooms_count} kamar tersedia)`}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {errors.room_type_id && (
+                                    <p className="text-sm text-red-500">{errors.room_type_id.message}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                    Sistem akan otomatis memilihkan kamar yang tersedia
+                                </p>
+                            </>
+                        ) : (
+                            <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200">
+                                <p className="text-sm text-yellow-800">
+                                    Tidak ada tipe kamar tersedia untuk tanggal yang dipilih. Silakan pilih tanggal lain.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Waktu Rencana */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -288,7 +436,10 @@ export default function CreateReservationPage() {
                     <Link href={`/hotel/dashboard/${hotelId}/reservations`}>
                         <Button type="button" variant="outline">Batal</Button>
                     </Link>
-                    <Button type="submit" disabled={isSubmitting || !selectedRoomId || !checkInDate || !checkOutDate}>
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || !selectedRoomTypeId || !checkInDate || !checkOutDate || roomTypes.length === 0}
+                    >
                         {isSubmitting ? "Membuat..." : "Buat Reservasi"}
                     </Button>
                 </div>
